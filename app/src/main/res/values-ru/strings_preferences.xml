@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pref_store_location">Сохранять местоположение</string>
+    <string name="pref_store_location_sum">Загружать предыдущее местоположение при запуске приложения</string>
+    
+    <string name="pref_disable_warn_providers">Отключенные источники местоположения</string>
+    <string name="pref_disable_warn_providers_sum">Не предупреждать об отключенных источниках местоположения</string>
+    <string name="pref_show_accuracy">Показывать точность определения местоположения</string>
+    
+    <string name="pref_offline_map_path">Карта</string>
+    
+    <string name="pref_autozoom">Автоматический масштаб</string>
+    <string name="pref_on">Включено</string>
+    <string name="pref_off">Выключено</string>
+
+    <string name="pref_disable_warn_network_sum">Не предупреждать о недоступной сети</string>
+    <string name="pref_disable_warn_network">Недоступная сеть</string>
+    
+    <string name="pref_all">Все</string>
+    <string name="pref_disable_warn_navigation_sum">Не предупреждать о данных навигации</string>
+    <string name="pref_disable_warn_navigation">Данные навигации</string>
+    <string name="pref_warnings">Предупреждения</string>
+    <string name="pref_vehicle_title">Средство передвижения</string>
+
+    <string name="pref_radius">Радиус</string>
+    <string name="pref_radius_sum">Искать в радиусе</string>
+
+    <string-array name="pref_vehicles">
+        <item>Автомобиль</item>
+        <item>Пешеход</item>
+        <item>Велосипед</item>
+    </string-array>
+
+</resources>

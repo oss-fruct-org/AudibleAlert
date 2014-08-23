@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AudibleAlert</string>
+    <string name="action_settings">Настройки</string>
+    <string name="action_search">Поиск</string>
+    <string name="action_place">Показать достопримечательности</string>
+    <string name="action_download_map">Карты</string>
+    <string name="action_download_navigation_data">Скачать данные навигации</string>
+
+    <string name="title_activity_points">Достопримечательности</string>
+    <string name="title_activity_details">Детали</string>
+    <string name="action_track">Следовать</string>
+    <string name="filter">Фильтр</string>
+
+    <string name="warn_no_providers">Не включено ни одного источника местоположения</string>
+    <string name="configure_providers">Настроить</string>
+    <string name="warn_providers_disable">Больше не показывать</string>
+    <string name="pref_navigation_data">Данные навигации</string>
+    <string name="warn_no_network">Сеть недоступна</string>
+    <string name="action_refresh">Обновить</string>
+    <string name="action_stop">Остановить</string>
+
+    <string name="no_networks_offline">Сеть недоступна</string>
+    <string name="download_interrupted">Загрузка прервана</string>
+    <string name="error_downloading">Ошибка загрузки</string>
+    <string name="download_finished">Загрузка завершена</string>
+
+    <string name="navigation_data">Данные навигации</string>
+    <string name="offline_map">Карта</string>
+
+    <string name="use">Использовать</string>
+    <string name="download">Загрузить</string>
+    <string name="update_availabe">доступно обновление</string>
+    <string name="action_about">О программе</string>
+    <string name="configure_use_offline_map">Настроить карту</string>
+    <string name="warn_no_navigation_data">Нет данных навигации</string>
+    <string name="configure_navigation_data">Загрузить данные навигации</string>
+
+    <string name="pref_storage_path_title">Место хранения данных</string>
+    <string name="storage_path_internal">Внутреннее</string>
+    <string name="storage_path_external">Внешнее</string>
+    <string name="storage_path_sd_card">SD карта</string>
+    <string name="action_use">Использовать</string>
+    <string name="action_delete">Удалить</string>
+    <string name="action_download">Загрузить</string>
+
+    <string name="pref_use_offline_map">Использовать оффлайн-карту</string>
+    <string name="pref_use_offline_map_sumon">Используется</string>
+    <string name="pref_use_offline_map_sumoff">Не используется</string>
+    <string name="pref_autoregion">Определять регион</string>
+    <string name="pref_mapmatching">Привязка к дороге</string>
+    <string name="str_updating_points">Обновляются точки…</string>
+    <string name="str_cant_delete_active_content">Нельзя удалить используемые данные</string>
+    <string name="str_starting_download">Starting download...</string>
+
+    <plurals  name="distance_meters">
+        <item quantity="one">Расстояние: %d метр</item>
+        <item quantity="few">Расстояние: %d метра</item>
+        <item quantity="many">Расстояние: %d метров</item>
+        <item quantity="other">Расстояние: %d метров</item>
+    </plurals>
+    
+    <plurals name="distance_kilometers">
+        <item quantity="one">Расстояние: %.1f километр</item>
+        <item quantity="few">Расстояние: %.1f километра</item>
+        <item quantity="many">Расстояние: %.1f километров</item>
+        <item quantity="other">Расстояние: %.1f километров</item>
+    </plurals>
+</resources>

@@ -1,21 +1,119 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.aa.audiblealert" >
+    package="org.fruct.oss.aa" >
+
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
+        android:name="org.fruct.oss.ikm.App"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
-        <activity
-            android:name=".MainScreen"
-            android:label="@string/app_name" >
+        android:theme="@style/Theme.AppCompat.Light" >
+       <activity
+            android:name="org.fruct.oss.ikm.MainActivity"
+            android:label="@string/app_name"
+            android:launchMode="singleTask" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name="org.fruct.oss.ikm.SettingsActivity"
+            android:label="@string/title_activity_settings" >
+        </activity>
+        <activity
+            android:name="org.fruct.oss.ikm.PointsActivity"
+            android:label="@string/title_activity_points"
+            android:parentActivityName="org.fruct.oss.ikm.MainActivity" >
+            <intent-filter>
+                <action android:name="org.fruct.oss.ikm.POINT_ACTION" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="org.fruct.oss.ikm.MainActivity" />
+        </activity>
+        <activity
+            android:name="org.fruct.oss.ikm.DetailsActivity"
+            android:label="@string/title_activity_details"
+            android:parentActivityName="org.fruct.oss.ikm.PointsActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="org.fruct.oss.ikm.PointsActivity" />
+        </activity>
+        <activity
+            android:name="org.fruct.oss.ikm.OnlineContentActivity"
+            android:parentActivityName="org.fruct.oss.ikm.MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="org.fruct.oss.ikm.MainActivity" />
+        </activity>
+
+        <service
+            android:name="org.fruct.oss.ikm.service.DirectionService"
+            android:enabled="true"
+            android:exported="false" >
+        </service>
+        <service
+            android:name="org.fruct.oss.ikm.appwidget.UpdateService"
+            android:enabled="@bool/is_support_appwidget"
+            android:exported="false" >
+        </service>
+        <service
+            android:name="org.fruct.oss.ikm.appwidget.WidgetService"
+            android:enabled="@bool/is_support_appwidget"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" >
+        </service>
+        <service
+            android:name="org.fruct.oss.ikm.storage.RemoteContentService"
+            android:enabled="true"
+            android:exported="false" >
+        </service>
+
+        <receiver
+            android:name="org.fruct.oss.ikm.appwidget.RoadSignsWidgetProvider"
+            android:enabled="@bool/is_support_appwidget" >
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/roadsigns_appwidget_info" />
+        </receiver>
+
+        <activity
+            android:name="org.fruct.oss.ikm.HelpActivity"
+            android:label="@string/title_activity_help"
+            android:parentActivityName="org.fruct.oss.ikm.MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="org.fruct.oss.ikm.MainActivity" />
+        </activity>
+        <activity
+            android:name="org.fruct.oss.ikm.HelpTabActivity"
+            android:label="@string/title_activity_help_tab"
+            android:parentActivityName="org.fruct.oss.ikm.MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="MainActivity" />
+        </activity>
+
+        <service
+            android:name="org.fruct.oss.ikm.DataService"
+            android:enabled="true"
+            android:exported="false" >
+        </service>
+
     </application>
 
 </manifest>
