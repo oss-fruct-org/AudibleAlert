@@ -14,7 +14,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class GetsPointLoader extends PointLoader {
 	private static Logger log = LoggerFactory.getLogger(GetsPointLoader.class);
@@ -38,6 +40,8 @@ public class GetsPointLoader extends PointLoader {
 
 	private boolean needUpdate = false;
 
+    Set<String> needed = new HashSet<String>();
+
 	public GetsPointLoader(String url) {
 		gets = new Gets(url);
 
@@ -59,6 +63,14 @@ public class GetsPointLoader extends PointLoader {
 			List<PointDesc> points = new ArrayList<PointDesc>();
 			List<CategoriesList.Category> categories = gets.getCategories();
 
+            /*
+            initializeNeedeCategories();
+
+            for (CategoriesList.Category cat : categories)
+                if(!checkCategory(cat.getName()))
+                    categories.remove(cat);
+
+            */
 			for (CategoriesList.Category cat : categories) {
 				try {
 					points.addAll(gets.getPoints(cat, currentPosition, radius));
@@ -112,4 +124,17 @@ public class GetsPointLoader extends PointLoader {
 		this.radius = radiusM;
 		needUpdate = true;
 	}
+
+    private void initializeNeedeCategories(){
+        //TODO: get needed categories from some source
+        // for(..)needed.add(..)
+        //needed.add("Hotels");
+    }
+    private boolean checkCategory(String categoryName) {
+        log.debug("NeededCategories size = " + needed.size());
+        if (needed.contains(categoryName))
+            return true;
+        else
+            return false;
+    }
 }

@@ -42,6 +42,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.fruct.oss.aa.TrackingService;
 import org.fruct.oss.ikm.DataService;
 import org.fruct.oss.ikm.HelpTabActivity;
 import org.fruct.oss.ikm.MainActivity;
@@ -190,7 +191,9 @@ public class MapFragment extends Fragment implements MapListener,
 	private boolean isTracking = false;
 	
 	private DirectionService directionService;
-	
+    private TrackingService trackingService;
+    private TrackingServiceConnection tserviceConnection = new TrackingServiceConnection();
+
 	private EnumMap<State, List<Runnable>> pendingTasks = new EnumMap<State, List<Runnable>>(
 			State.class);
 	private EnumSet<State> activeStates = EnumSet.of(State.NO_CREATED);
@@ -791,9 +794,9 @@ public class MapFragment extends Fragment implements MapListener,
 	
 	public void startTracking() {
 		isTracking = true;
-		myPositionOverlay.setListener(this);
-		panelOverlay.setVisibility(View.VISIBLE);
-		panelOverlay.setHidden(false);
+		//myPositionOverlay.setListener(this);
+		//panelOverlay.setVisibility(View.VISIBLE);
+		//panelOverlay.setHidden(false);
 
 		if (menu != null)
 			menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_searching);
@@ -1039,4 +1042,17 @@ public class MapFragment extends Fragment implements MapListener,
 			}
 		}
 	};
+
+    private class TrackingServiceConnection implements ServiceConnection {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            trackingService = ((TrackingService.TrackingServiceBinder) iBinder).getService();
+            trackingService.sendLastLocation();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            trackingService = null;
+        }
+    }
 }

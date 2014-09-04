@@ -48,6 +48,9 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String GETS_SERVER = "gets_server";
 	public static final String GETS_RADIUS = "gets_radius";
 
+    public static final String ALERT_RADIUS = "Alert radius";
+
+
 	public static final String STORAGE_PATH = "storage_path";
 
 	public static final String GETS_SERVER_DEFAULT = "http://oss.fruct.org/projects/gets/service";
@@ -62,6 +65,9 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	private ListPreference getsRadius;
 
 	private DataService dataService;
+
+    //TODO: add this to settings activity
+    public static final String PREF_WAKE = "pref_wake";
 
 	@BindSetter
 	public void remoteContentServiceReady(DataService service) {
@@ -80,7 +86,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		
 		storeLocationsPref = (CheckBoxPreference) findPreference(STORE_LOCATION);
 		nearestPointsPref = (ListPreference) findPreference(NEAREST_POINTS);
-		vehiclePref = (ListPreference) findPreference(VEHICLE);
+		//vehiclePref = (ListPreference) findPreference(VEHICLE);
 
 		storagePathPref = (ListPreference) findPreference(STORAGE_PATH);
 		getsRadius = (ListPreference) findPreference(GETS_RADIUS);
@@ -103,7 +109,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		final SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
 		updateRadius(sharedPreferences);
 		updateNearestPoints(sharedPreferences);
-		updateVehicle();
+		//updateVehicle();
 
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 

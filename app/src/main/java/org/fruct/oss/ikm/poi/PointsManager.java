@@ -190,6 +190,8 @@ public class PointsManager {
 		for (PointDesc point : points)
 			names.add(point.getCategory());
 
+        //removeUnusedCategories(names);
+
         for (String str : names) {
             log.trace("Filter for category {}", str);
 			CategoryFilter filter = new CategoryFilter(str, str);
@@ -199,6 +201,27 @@ public class PointsManager {
 			}
 		}
 	}
+
+
+    private void removeUnusedCategories(Set<String> names){
+        Set<String> remain = new HashSet<String>();
+        Set<String> needed = new HashSet<String>();
+        //TODO: get needed categories from some source
+        // for(..)needed.add(..)
+        //needed.add("Hotels");
+        for(String str : names){
+            log.trace("Cheking category {}", str);
+            if(needed.contains(str))
+                remain.add(str);
+        }
+        log.error("Remaining categories: **********\n");
+        names.clear();
+        for(String str : remain){
+            log.error(str);
+            names.add(str);
+        }
+    }
+
 
 	public void addListener(PointsListener listener) {
 		listeners.add(listener);

@@ -7,6 +7,7 @@ import android.preference.PreferenceManager;
 
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.poi.PointDesc;
+import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.service.LocationReceiver;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
@@ -28,6 +29,9 @@ public class DistanceTracker implements LocationReceiver.Listener {
 
     private final List<PointDesc> points = new ArrayList<PointDesc>();
     private Cursor currentCursor;
+
+    //test
+    private float minDistance = 100000f;
 
     public DistanceTracker(LocationReceiver locationReceiver) {
         this.locationReceiver = locationReceiver;
@@ -53,9 +57,9 @@ public class DistanceTracker implements LocationReceiver.Listener {
     }
 
     public void start() {
-        log.debug("DistanceTracker stop");
+        log.debug("DistanceTracker start************");
 
-        locationReceiver.setListener(this);
+        locationReceiver.addListener(this);
         locationReceiver.start();
     }
 
@@ -68,6 +72,8 @@ public class DistanceTracker implements LocationReceiver.Listener {
 
     @Override
     public void newLocation(Location location) {
+        log.debug("@newLocation in DistanceTracker**********");
+        updatePoints();
         ArrayList<PointDesc> outRange = new ArrayList<PointDesc>();
         ArrayList<PointDesc> inRange = new ArrayList<PointDesc>();
 
@@ -75,8 +81,9 @@ public class DistanceTracker implements LocationReceiver.Listener {
         for (PointDesc point : points) {
             boolean isPointInRange = pointsInRange.contains(point);
 
-
             float distanceMeters = point.toPoint().distanceTo(geoPoint);
+            if(distanceMeters < minDistance)
+                minDistance = distanceMeters;
 
             if (distanceMeters < radius && !isPointInRange) {
                 inRange.add(point);
@@ -94,6 +101,8 @@ public class DistanceTracker implements LocationReceiver.Listener {
             pointsInRange.add(point);
             notifyPointInRange(point);
         }
+
+        log.debug("Min Distance = " + minDistance + "\n");
     }
 
     private void notifyPointInRange(PointDesc point) {
@@ -118,5 +127,16 @@ public class DistanceTracker implements LocationReceiver.Listener {
     public interface Listener {
         void pointInRange(PointDesc point);
         void pointOutRange(PointDesc point);
+    }
+
+    private void updatePoints(){
+        List<PointDesc> filteredPoints = PointsManager.getInstance().getFilteredPoints();
+        points.clear();
+
+        for (PointDesc point : filteredPoints) {
+            points.add(point);
+        }
+
+
     }
 }

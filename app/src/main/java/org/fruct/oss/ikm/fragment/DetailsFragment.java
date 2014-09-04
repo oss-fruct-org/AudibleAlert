@@ -198,7 +198,7 @@ public class DetailsFragment extends Fragment {
 				startActivity(intent);
 			}
 		});
-
+        /*
 		ImageButton searchButton = (ImageButton) getActivity().findViewById(R.id.search_button);
 		searchButton.setOnClickListener(new View.OnClickListener() {
 			@Override
@@ -211,8 +211,10 @@ public class DetailsFragment extends Fragment {
 				v.setClickable(false);
 
 			}
-		});
+		}); */
 
+
+        /*
 		// Show web button if description of point represents URL
 		if (desc.isDescriptionUrl()) {
 			ImageButton webButton = (ImageButton) getActivity().findViewById(R.id.browse_button);
@@ -227,7 +229,7 @@ public class DetailsFragment extends Fragment {
 					startActivity(intent);
 				}
 			});
-		}
+		}*/
 
 		titleView.setText(desc.getName());
 

@@ -55,13 +55,6 @@
             android:src="@drawable/ic_action_web_site"
             android:visibility="gone"/>
 
-        <ImageButton
-            android:id="@+id/search_button"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_marginLeft="16dp"
-            android:contentDescription="Wikipedia search"
-            android:src="@drawable/wikipediaw"/>
     </LinearLayout>
 
     <ListView

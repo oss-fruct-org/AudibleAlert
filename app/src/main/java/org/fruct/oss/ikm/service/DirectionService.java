@@ -1,23 +1,36 @@
 package org.fruct.oss.ikm.service;
 
 import android.annotation.TargetApi;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.location.Location;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.Parcelable;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.graphhopper.util.PointList;
 import com.graphhopper.util.Unzipper;
 
+import org.fruct.oss.aa.AudioManager;
+import org.fruct.oss.aa.AudioPlayer;
+import org.fruct.oss.aa.DistanceTracker;
+import org.fruct.oss.aa.R;
 import org.fruct.oss.ikm.DataService;
+import org.fruct.oss.ikm.MainActivity;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
@@ -38,7 +51,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class DirectionService extends Service implements PointsListener,
+public class DirectionService extends Service implements PointsListener, DistanceTracker.Listener,
 		DirectionManager.Listener, OnSharedPreferenceChangeListener, Listener, DataService.DataListener {
 	private static Logger log = LoggerFactory.getLogger(DirectionService.class);
 
@@ -57,6 +70,31 @@ public class DirectionService extends Service implements PointsListener,
 	private static final String MOCK_PROVIDER = "mock-provider";
 
 	public static final String PREF_NAVIGATION_DIR = "navigation-dir";
+
+    public static final String BC_ACTION_POINT_IN_RANGE = "BC_ACTION_POINT_IN_RANGE";
+    public static final String BC_ACTION_POINT_OUT_RANGE = "BC_ACTION_POINT_IOUTN_RANGE";
+    public static final String BC_ACTION_NEW_LOCATION = "BC_ACTION_NEW_LOCATION";
+
+    public static final String ARG_POINT = "ARG_POINT";
+    public static final String ARG_LOCATION = "ARG_LOCATION";
+
+    public static final String ACTION_WAKE = "org.fruct.oss.audioguide.TrackingService.ACTION_WAKE";
+
+    public static final String ACTION_START_TRACKING = "org.fruct.oss.audioguide.TrackingService.ACTION_START_TRACKING";
+    public static final String ACTION_STOP_TRACKING = "org.fruct.oss.audioguide.TrackingService.ACTION_STOP_TRACKING";
+
+    public static final String ACTION_PLAY = "org.fruct.oss.audioguide.TrackingService.ACTION_PLAY";
+    public static final String ACTION_STOP = "org.fruct.oss.audioguide.TrackingService.ACTION_STOP";
+
+    public static final String ACTION_PAUSE = "org.fruct.oss.audioguide.TrackingService.ACTION_PAUSE";
+    public static final String ACTION_UNPAUSE = "org.fruct.oss.audioguide.TrackingService.ACTION_UNPAUSE";
+    public static final String ACTION_SEEK = "org.fruct.oss.audioguide.TrackingService.ACTION_SEEK";
+
+    public static final String ACTION_BACKGROUND = "org.fruct.oss.audioguide.TrackingService.ACTION_BACKGROUND";
+    public static final String ACTION_FOREGROUND = "org.fruct.oss.audioguide.TrackingService.ACTION_FOREGROUND";
+
+    public static final String PREF_IS_TRACKING_MODE = "pref-tracking-service-is-tracking-mode";
+    public static final String PREF_IS_BACKGROUND_MODE = "pref-tracking-service-is-background-mode";
 
 	private RemoteContentService remoteContent;
 
@@ -92,7 +130,23 @@ public class DirectionService extends Service implements PointsListener,
 	private AsyncTask<String, Void, Void> extractTask;
 	private int radius;
 
-	public class DirectionBinder extends android.os.Binder {
+    private boolean isTrackingMode = false;
+    private boolean isBackgroundMode = false;
+
+    private static int NOTIFICATION_ID = 1;
+
+    private DistanceTracker distanceTracker;
+
+    BroadcastReceiver audioFinishedReceiver;
+
+    private AudioManager audioManager;
+
+    @Override
+    public void pointOutRange(PointDesc point) {
+
+    }
+
+    public class DirectionBinder extends android.os.Binder {
 		public DirectionService getService() {
 			return DirectionService.this;
 		}
@@ -116,6 +170,20 @@ public class DirectionService extends Service implements PointsListener,
 
 		locationReceiver = new LocationReceiver(this);
 		locationIndexCache = new LocationIndexCache(this);
+
+        distanceTracker = new DistanceTracker(locationReceiver);
+        distanceTracker.addListener(this);
+
+        audioFinishedReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                audioManager.playNext();
+                log.debug("AUDIOPLAYER: PLAYING NEXT ^^^^^^^^^^^^^^=======");
+            }
+        };
+        this.registerReceiver(audioFinishedReceiver, new IntentFilter(AudioPlayer.BC_ACTION_STOP_PLAY));
+
+        audioManager = new AudioManager(this);
 
 		PointsManager.getInstance().addListener(this);
 		pref.registerOnSharedPreferenceChangeListener(this);
@@ -315,9 +383,9 @@ public class DirectionService extends Service implements PointsListener,
 			return;
 		}
 
-		locationReceiver.setListener(this);
-
+		locationReceiver.addListener(this);
 		locationReceiver.start();
+        distanceTracker.start();
 		locationReceiver.sendLastLocation();
 	}
 
@@ -530,4 +598,48 @@ public class DirectionService extends Service implements PointsListener,
 			}
 		}
 	}
+
+    private void showNotification(Notification notification) {
+        if (!isBackgroundMode)
+            return;
+
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        notificationManager.notify(NOTIFICATION_ID, notification);
+    }
+
+    private Notification createNotification(String text) {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.drawable.ic_launcher)
+                .setContentTitle("Audible Alert")
+                .setContentText(text != null ? text : "Audible Alert in background. Click to open")
+                .setOngoing(true);
+
+        // Open app action
+        Intent intent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+                intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        builder.setContentIntent(pendingIntent);
+
+        // Stop tracking action
+        Intent stopIntent = new Intent(ACTION_STOP_TRACKING, null, this, DirectionService.class);
+        PendingIntent stopPendingIntent = PendingIntent.getService(this, 1, stopIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+        //builder.addAction(R.drawable.ic_action_volume_muted, "Stop", stopPendingIntent);
+        return builder.build();
+    }
+
+    @Override
+    public void pointInRange(PointDesc point) {
+        log.debug("pointInRange: {}", point.getName());
+
+        Intent intent = new Intent(BC_ACTION_POINT_IN_RANGE);
+        intent.putExtra(ARG_POINT, (Parcelable)point);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+
+        if (isTrackingMode) {
+            audioManager.queueToPlay(point);
+        }
+
+        showNotification(createNotification(point.getName()));
+    }
 }

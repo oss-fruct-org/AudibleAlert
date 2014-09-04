@@ -17,6 +17,16 @@
         <item>1000 kilometers</item>
     </string-array>
 
+    <string-array name="alert_radius_strings">
+        <item>5 meters</item>
+        <item>10 meters</item>
+        <item>15 meters</item>
+        <item>20 meters</item>
+        <item>30 meters</item>
+        <item>50 meters</item>
+        <item>100 meters</item>
+    </string-array>
+
     <string-array name="radius_values">
         <item>100</item>
         <item>500</item>
