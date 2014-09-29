@@ -60,6 +60,7 @@
         <service
             android:name="org.fruct.oss.ikm.service.DirectionService"
             android:enabled="true"
+            android:stopWithTask="true"
             android:exported="false" >
         </service>
         <service

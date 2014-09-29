@@ -79,6 +79,9 @@ public class ContentDialog extends DialogFragment implements DialogInterface.OnC
 
 			active[i] = (sItem.state == OnlineContentActivity.LocalContentState.NEEDS_UPDATE
 				|| sItem.state == OnlineContentActivity.LocalContentState.NOT_EXISTS);
+
+            if(type.equals("graphhopper-map"))
+                active[i] = false;
 		}
 
 		try {

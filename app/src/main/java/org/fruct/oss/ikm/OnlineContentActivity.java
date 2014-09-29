@@ -177,7 +177,6 @@ class ContentAdapter extends BaseAdapter {
 
 			idx++;
 		}
-
 		return view;
 	}
 

@@ -32,6 +32,7 @@ import org.fruct.oss.aa.R;
 import org.fruct.oss.ikm.DataService;
 import org.fruct.oss.ikm.MainActivity;
 import org.fruct.oss.ikm.SettingsActivity;
+import org.fruct.oss.ikm.poi.Filter;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.poi.PointsManager.PointsListener;
@@ -48,11 +49,12 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
 public class DirectionService extends Service implements PointsListener, DistanceTracker.Listener,
-		DirectionManager.Listener, OnSharedPreferenceChangeListener, Listener, DataService.DataListener {
+		 OnSharedPreferenceChangeListener, Listener, DataService.DataListener {
 	private static Logger log = LoggerFactory.getLogger(DirectionService.class);
 
 	// Extras
@@ -137,8 +139,6 @@ public class DirectionService extends Service implements PointsListener, Distanc
 
     private DistanceTracker distanceTracker;
 
-    BroadcastReceiver audioFinishedReceiver;
-
     private AudioManager audioManager;
 
     @Override
@@ -166,6 +166,7 @@ public class DirectionService extends Service implements PointsListener, Distanc
 
 		pref = PreferenceManager.getDefaultSharedPreferences(this);
 
+        
 		BindHelper.autoBind(this, this);
 
 		locationReceiver = new LocationReceiver(this);
@@ -174,14 +175,7 @@ public class DirectionService extends Service implements PointsListener, Distanc
         distanceTracker = new DistanceTracker(locationReceiver);
         distanceTracker.addListener(this);
 
-        audioFinishedReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                audioManager.playNext();
-                log.debug("AUDIOPLAYER: PLAYING NEXT ^^^^^^^^^^^^^^=======");
-            }
-        };
-        this.registerReceiver(audioFinishedReceiver, new IntentFilter(AudioPlayer.BC_ACTION_STOP_PLAY));
+
 
         audioManager = new AudioManager(this);
 
@@ -232,6 +226,7 @@ public class DirectionService extends Service implements PointsListener, Distanc
 	@Override
 	public void onDestroy() {
 		log.debug("DirectionService destroyed");
+
 		if (locationReceiver != null && locationReceiver.isStarted()) {
 			locationReceiver.stop();
 		}
@@ -265,6 +260,9 @@ public class DirectionService extends Service implements PointsListener, Distanc
 		}
 
 		BindHelper.autoUnbind(this, this);
+
+        audioManager.onDestroy();
+        log.trace("DirectionService stopped");
 	}
 
 	private GHRouting createRouting() {
@@ -293,7 +291,7 @@ public class DirectionService extends Service implements PointsListener, Distanc
 				}
 
 				if (currentStoragePath != null) {
-					asyncUpdateDirectionsManager();
+					//asyncUpdateDirectionsManager();
 				}
 				return null;
 			}
@@ -308,28 +306,6 @@ public class DirectionService extends Service implements PointsListener, Distanc
 		}.execute();
 	}
 
-	private void asyncUpdateDirectionsManager() {
-		ghPath = currentStoragePath + "/graphhopper";
-		navigationDir = pref.getString(PREF_NAVIGATION_DIR, null);
-
-		routing = createRouting();
-		if (routing == null)
-			return;
-
-		updateMapMatcher();
-
-		DirectionManager oldDirManager = dirManager;
-		synchronized (dirManagerMutex) {
-			dirManager = new DirectionManager(routing);
-			dirManager.setListener(DirectionService.this);
-			dirManager.setRadius(radius);
-			dirManager.calculateForPoints(PointsManager.getInstance().getFilteredPoints());
-		}
-
-		if (oldDirManager != null) {
-			oldDirManager.closeSync();
-		}
-	}
 
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
 	public void fakeLocation(GeoPoint current) {
@@ -386,7 +362,9 @@ public class DirectionService extends Service implements PointsListener, Distanc
 		locationReceiver.addListener(this);
 		locationReceiver.start();
         distanceTracker.start();
+        distanceTracker.updatePoints();
 		locationReceiver.sendLastLocation();
+        audioManager.startPlaying();
 	}
 
 	@Override
@@ -512,7 +490,7 @@ public class DirectionService extends Service implements PointsListener, Distanc
 				pref.edit().putString(PREF_NAVIGATION_DIR, navigationDir).apply();
 
 				synchronized (dirManagerMutex) {
-					asyncUpdateDirectionsManager();
+					//asyncUpdateDirectionsManager();
 				}
 
 				if (oldNavigationDir != null) {
@@ -558,27 +536,6 @@ public class DirectionService extends Service implements PointsListener, Distanc
 				mapMatcher = routing.createSimpleMapMatcher();
 			}
 		}
-	}
-
-	@Override
-	public void directionsUpdated(List<Direction> directions, GeoPoint center) {
-		this.lastResultDirections = new ArrayList<Direction>(directions);
-		this.lastResultCenter = center;
-		this.lastResultLocation = lastLocation;
-
-		sendResult(lastResultDirections, lastResultCenter, lastLocation);
-	}
-
-	@Override
-	public void pathReady(PointList pointList) {
-		ArrayList<GeoPoint> pathArray = new ArrayList<GeoPoint>();
-		for (int i = 0; i < pointList.getSize(); i++)
-			pathArray.add(new GeoPoint(pointList.getLatitude(i), pointList.getLongitude(i)));
-
-		Intent intent = new Intent(PATH_READY);
-		intent.putParcelableArrayListExtra(PATH, pathArray);
-
-		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 	}
 
 	private void sendResult(ArrayList<Direction> directions, GeoPoint center, Location location) {
@@ -631,15 +588,47 @@ public class DirectionService extends Service implements PointsListener, Distanc
     @Override
     public void pointInRange(PointDesc point) {
         log.debug("pointInRange: {}", point.getName());
+        if(lastLocation == null)
+            return;
 
         Intent intent = new Intent(BC_ACTION_POINT_IN_RANGE);
         intent.putExtra(ARG_POINT, (Parcelable)point);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
+        GeoPoint last = new GeoPoint(lastLocation);
+        double myBearing = lastLocation.getBearing();
+        String relDir = "unknown_dir";
+
+        double relativeBearing = last.bearingTo(point.toPoint());
+
+        double bearing = (myBearing - relativeBearing) * -1;
+        if(bearing < 0)
+            bearing += 360;
+
+        if(bearing <= 45 || bearing >= 315)
+            relDir = "forward";
+        if(bearing <= 135 && bearing > 45)
+            relDir = "right";
+        if(bearing <= 225 && bearing > 135)
+            relDir = "back";
+        if(bearing <= 315 && bearing > 225)
+            relDir = "left";
+        //log.error("bearing = " + bearing);
         if (isTrackingMode) {
-            audioManager.queueToPlay(point);
+            audioManager.queueToPlay(point, relDir);
+            audioManager.playNext();
+        }else{ // while debugging
+            audioManager.queueToPlay(point, relDir);
+            audioManager.playNext();
         }
 
         showNotification(createNotification(point.getName()));
     }
+
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        return START_STICKY;
+    }
+
+
+
 }

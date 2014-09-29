@@ -22,7 +22,6 @@ public class TileProviderManager implements App.Clearable {
 	private OnlineTileSourceBase webSource;
 	private boolean isOnline;
 
-
 	public TileProviderManager(Context context) {
     	SimpleRegisterReceiver register = new SimpleRegisterReceiver(context.getApplicationContext());
 

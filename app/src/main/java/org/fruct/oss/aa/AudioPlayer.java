@@ -30,38 +30,6 @@ public class AudioPlayer implements MediaPlayer.OnPreparedListener, MediaPlayer.
         this.context = context;
     }
 
-    /*
-	public void startAudioTrack(Point point) {
-
-		if (player != null || !point.hasAudio()) {
-			return;
-		}
-
-		Uri uri = Uri.parse(point.getAudioUrl());
-
-		player = new MediaPlayer();
-		player.setAudioStreamType(AudioManager.STREAM_MUSIC);
-		try {
-			// Try to use cached uri
-			String localPath = fileManager.getLocalPath(uri);
-			if (localPath == null)
-				// Fallback to remote uri
-				player.setDataSource(context, uri);
-			else
-				player.setDataSource(context, Uri.parse(localPath));
-
-		} catch (IOException e) {
-			log.warn("Cannot set data source for player with url = '{}'", uri);
-			return;
-		}
-
-		currentUri = uri;
-		currentPoint = point;
-		player.setOnCompletionListener(this);
-		player.setOnPreparedListener(this);
-		player.setOnErrorListener(this);
-		player.prepareAsync();
-	}*/
 
     public boolean startAudioTrack(Uri uri) {
         if (player != null || uri == null) {
@@ -138,8 +106,8 @@ public class AudioPlayer implements MediaPlayer.OnPreparedListener, MediaPlayer.
             player = null;
             currentUri = null;
             currentUri = null;
-            LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent(BC_ACTION_STOP_PLAY));
-            log.debug("Sent BC_ACTION_STOP_PLAY ****************************");
+           // LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent(BC_ACTION_STOP_PLAY));
+            context.sendBroadcast(new Intent(BC_ACTION_STOP_PLAY));
         }
     }
 

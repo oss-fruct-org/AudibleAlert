@@ -15,8 +15,10 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.Point;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -42,7 +44,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.fruct.oss.aa.TrackingService;
+import org.fruct.oss.aa.CategoriesManager;
 import org.fruct.oss.ikm.DataService;
 import org.fruct.oss.ikm.HelpTabActivity;
 import org.fruct.oss.ikm.MainActivity;
@@ -74,7 +76,9 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.util.ResourceProxyImpl;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.Projection;
+import org.osmdroid.views.overlay.ItemizedIconOverlay;
 import org.osmdroid.views.overlay.Overlay;
+import org.osmdroid.views.overlay.OverlayItem;
 import org.osmdroid.views.overlay.PathOverlay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -149,8 +153,9 @@ public class MapFragment extends Fragment implements MapListener,
 	private boolean providersToastShown;
 
 	private Overlay poiOverlay;
+    private DefaultResourceProxyImpl mResourceProxy;
 
-	static enum State {
+    static enum State {
 		NO_CREATED(0), CREATED(1), DS_CREATED(2), DS_RECEIVED(3), SIZE(4);
 		
 		State(int idx) {
@@ -191,8 +196,6 @@ public class MapFragment extends Fragment implements MapListener,
 	private boolean isTracking = false;
 	
 	private DirectionService directionService;
-    private TrackingService trackingService;
-    private TrackingServiceConnection tserviceConnection = new TrackingServiceConnection();
 
 	private EnumMap<State, List<Runnable>> pendingTasks = new EnumMap<State, List<Runnable>>(
 			State.class);
@@ -206,7 +209,12 @@ public class MapFragment extends Fragment implements MapListener,
 	private boolean localListReady = true;
 	private TileProviderManager tileProviderManager;
 
-	public MapFragment() {
+
+    Drawable testMarker;
+    Drawable hotelMarker;
+    Drawable defaultMarker;
+
+    public MapFragment() {
 		pendingTasks.put(State.NO_CREATED, new ArrayList<Runnable>());
 		pendingTasks.put(State.CREATED, new ArrayList<Runnable>());
 		pendingTasks.put(State.DS_CREATED, new ArrayList<Runnable>());
@@ -238,15 +246,18 @@ public class MapFragment extends Fragment implements MapListener,
 
 		super.onCreate(savedInstanceState);
 		setHasOptionsMenu(true);
-		
+
+        CategoriesManager.init();
+
 		// Bind DirectionService
 		Intent intent = new Intent(getActivity(), DirectionService.class);
-		getActivity().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+        getActivity().startService(intent);
+		getActivity().bindService(intent, serviceConnection, getActivity().BIND_AUTO_CREATE);
 		
 		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(directionsReceiver = new BroadcastReceiver() {
 			@Override
 			public void onReceive(Context context, Intent intent) {
-				log.debug("MapFragment DIRECTIONS_READY");
+				//log.debug("MapFragment DIRECTIONS_READY");
 				//GeoPoint geoPoint = intent.getParcelableExtra(DirectionService.CENTER);
 				ArrayList<Direction> directions = intent.getParcelableArrayListExtra(DirectionService.DIRECTIONS_RESULT);
 				updateDirectionOverlay(directions);
@@ -308,6 +319,11 @@ public class MapFragment extends Fragment implements MapListener,
 		}, new IntentFilter(DirectionService.PATH_READY));
 
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);
+
+
+        hotelMarker = this.getResources().getDrawable(R.drawable.hotel);
+        defaultMarker = this.getResources().getDrawable(R.drawable.point_marker_small);
+
 
 		BindHelper.autoBind(this.getActivity(), this);
 	}
@@ -381,8 +397,8 @@ public class MapFragment extends Fragment implements MapListener,
 		myPositionOverlay.setShowAccuracy(pref.getBoolean(SettingsActivity.SHOW_ACCURACY, false));
 
 		mapView.getOverlays().add(overlay);
-		updatePOIOverlay();
-
+		//updatePOIOverlay();
+        new loadIconsTask().execute();
 		// Test lines overlay
 		//TestLinesOverlay over = new TestLinesOverlay(getActivity(), mapView);
 		//mapView.getOverlays().add(over);
@@ -458,7 +474,6 @@ public class MapFragment extends Fragment implements MapListener,
 		
 		checkProvidersEnabled();
 		checkNetworkAvailable();
-		checkNavigationDataAvailable();
 		
 		// Start tracking if preference set
 		if (pref.getBoolean(SettingsActivity.STORE_LOCATION, false)) {
@@ -493,32 +508,6 @@ public class MapFragment extends Fragment implements MapListener,
 		});
 	}
 
-	private void checkNavigationDataAvailable() {
-		SharedPreferences pref = PreferenceManager
-				.getDefaultSharedPreferences(getActivity());
-
-		if (!navigationDataToastShown && pref.getString(SettingsActivity.NAVIGATION_DATA, "").isEmpty()) {
-			if (!pref.getBoolean(SettingsActivity.WARN_NAVIGATION_DATA_DISABLED, false)) {
-				WarnDialog dialog = new WarnDialog(R.string.warn_no_navigation_data,
-						R.string.configure_navigation_data,
-						R.string.warn_providers_disable,
-						SettingsActivity.WARN_NAVIGATION_DATA_DISABLED) {
-					@Override
-					protected void onAccept() {
-						Intent intent = new Intent(getActivity(), OnlineContentActivity.class);
-						getActivity().startActivity(intent);
-					}
-				};
-				dialog.show(getFragmentManager(), "navigation-data-dialog");
-			} else {
-				Toast toast = Toast.makeText(getActivity(),
-						R.string.warn_no_navigation_data, Toast.LENGTH_SHORT);
-				toast.show();
-
-			}
-			navigationDataToastShown = true;
-		}
-	}
 
 	private void checkNetworkAvailable() {
 		boolean networkActive = Utils.checkNetworkAvailability(getActivity());
@@ -610,6 +599,12 @@ public class MapFragment extends Fragment implements MapListener,
 
 		BindHelper.autoUnbind(this.getActivity(), this);
 
+        if(getActivity().isFinishing()) {
+            Intent intent = new Intent(getActivity(), DirectionService.class);
+            getActivity().stopService(intent);
+            log.trace("Activity is finishing, stopped service");
+        }
+
 		super.onDestroy();
 	}
 	
@@ -637,6 +632,7 @@ public class MapFragment extends Fragment implements MapListener,
 						: R.drawable.ic_action_location_found);
 		super.onPrepareOptionsMenu(menu);
 	}
+
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
@@ -731,7 +727,7 @@ public class MapFragment extends Fragment implements MapListener,
 			final GeoPoint markerPosition = directionPoint;
 			
 			//markerPosition = directionPoint;
-			ClickableDirectedLocationOverlay overlay = new ClickableDirectedLocationOverlay(context, mapView, markerPosition, (float) bearing);
+			/*ClickableDirectedLocationOverlay overlay = new ClickableDirectedLocationOverlay(context, mapView, markerPosition, (float) bearing);
 			
 			overlay.setListener(new ClickableDirectedLocationOverlay.Listener() {
 				@Override
@@ -743,7 +739,7 @@ public class MapFragment extends Fragment implements MapListener,
 			});
 			
 			mapView.getOverlays().add(overlay);
-			crossDirections.add(overlay);
+			crossDirections.add(overlay); */
 		}
 		
 		mapState.directions = directions;
@@ -771,11 +767,48 @@ public class MapFragment extends Fragment implements MapListener,
 		List<ExtendedOverlayItem> items2 = Utils.map(points, new Utils.Function<ExtendedOverlayItem, PointDesc>() {
             public ExtendedOverlayItem apply(PointDesc point) {
                 ExtendedOverlayItem item = new ExtendedOverlayItem(point.getName(), point
-                        .getDescription(), point.toPoint());
+                        .getCategory(), point.toPoint());
                 item.setRelatedObject(point);
                 return item;
             }
         });
+
+
+        List<OverlayItem> items3 = Utils.map(points, new Utils.Function<OverlayItem, PointDesc>(){
+            public OverlayItem apply(PointDesc point){
+                OverlayItem item = new OverlayItem(point.getName(),
+                        point.getCategory(), point.toPoint());
+                return item;
+            }
+        });
+
+        if(testMarker == null)
+            log.error("testmarker didnt load");
+
+        for(OverlayItem oi : items2)
+            oi.setMarker(defaultMarker);
+        for(OverlayItem oi : items2){
+            if(oi.getSnippet().equalsIgnoreCase("hotels"))
+               oi.setMarker(hotelMarker);
+            if(oi.getSnippet().equalsIgnoreCase("museums") && testMarker != null)
+                oi.setMarker(testMarker);
+        }
+
+
+        mResourceProxy = new DefaultResourceProxyImpl(context);
+
+
+        ItemizedIconOverlay.OnItemGestureListener<OverlayItem> GListener= new ItemizedIconOverlay.OnItemGestureListener<OverlayItem>() {
+            @Override
+            public boolean onItemSingleTapUp(int index, OverlayItem item) {
+                return false;
+            }
+
+            @Override
+            public boolean onItemLongPress(int index, OverlayItem item) {
+                return false;
+            }
+        };
 
 		infoWindow = new POIInfoWindow(R.layout.bonuspack_bubble, mapView);
 		poiOverlay = new ItemizedOverlayWithBubble<ExtendedOverlayItem>(
@@ -788,13 +821,18 @@ public class MapFragment extends Fragment implements MapListener,
 			}
 		};
 
+
+       // poiOverlay = new ItemizedIconOverlay<OverlayItem>(items3, defaultMarker, GListener, mResourceProxy );
+
+
+
 		mapView.getOverlays().add(poiOverlay);
 		log.trace("MapFragment.updatePOIOverlay EXIT");
 	}
 	
 	public void startTracking() {
 		isTracking = true;
-		//myPositionOverlay.setListener(this);
+		myPositionOverlay.setListener(this);
 		//panelOverlay.setVisibility(View.VISIBLE);
 		//panelOverlay.setHidden(false);
 
@@ -808,12 +846,12 @@ public class MapFragment extends Fragment implements MapListener,
 	public void stopTracking() {
 		isTracking = false;
 		myPositionOverlay.clearListener();
-		panelOverlay.setVisibility(View.GONE);
-		panelOverlay.setHidden(true);
+		//panelOverlay.setVisibility(View.GONE);
+		//panelOverlay.setHidden(true);
 		
 		if (menu != null)
-			menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_found);
-		
+            menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_found);
+
 		mapView.setMapOrientation(0);
 	}
 	
@@ -906,6 +944,7 @@ public class MapFragment extends Fragment implements MapListener,
 
 	@Override
 	public void onScroll() {
+        log.error("In OnScroll and isTracking = "  + isTracking);
 		if (isTracking)
 			stopTracking();
 	}
@@ -1043,16 +1082,17 @@ public class MapFragment extends Fragment implements MapListener,
 		}
 	};
 
-    private class TrackingServiceConnection implements ServiceConnection {
-        @Override
-        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            trackingService = ((TrackingService.TrackingServiceBinder) iBinder).getService();
-            trackingService.sendLastLocation();
-        }
+
+
+    private class loadIconsTask extends AsyncTask {
 
         @Override
-        public void onServiceDisconnected(ComponentName componentName) {
-            trackingService = null;
+        protected Object doInBackground(Object[] objects) {
+            testMarker = CategoriesManager.drawableFromUrlSafe("http://kappa.cs.karelia.ru/~kolomens/museum.png");
+            updatePOIOverlay();
+
+            return null;
         }
     }
+
 }

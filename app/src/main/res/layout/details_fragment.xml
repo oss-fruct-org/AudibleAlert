@@ -39,14 +39,6 @@
             android:src="@drawable/ic_action_place" />
 
         <ImageButton
-            android:id="@+id/search_place_button"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:layout_marginLeft="16dp"
-            android:contentDescription="Search button"
-            android:src="@drawable/ic_action_directions" />
-
-        <ImageButton
             android:id="@+id/browse_button"
             android:layout_width="50dp"
             android:layout_height="50dp"

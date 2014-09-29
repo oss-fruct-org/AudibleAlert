@@ -47,7 +47,6 @@ public class PointsActivity extends ActionBarActivity {
 			finish();
 			return true;
 		}
-		
 		return super.onOptionsItemSelected(item);
 	}
 }

@@ -93,6 +93,7 @@ public class Gets implements IGets {
 		} catch (RuntimeException ex) {
 			throw ex;
 		} catch (Exception e) {
+            log.error(e.getMessage());
 			throw new IOException("Incorrect answer from server");
 		}
 	}

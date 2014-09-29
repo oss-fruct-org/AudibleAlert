@@ -338,7 +338,7 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 	
 	private void setupFilterBar(int selectedBar) {
 		ActionBar actionBar = getActionBar();
-		List<Filter> filters = PointsManager.getInstance().getFilters();
+		List<Filter> filters = PointsManager.getInstance().getDistanceFilters();
 		
 		setupTab(new AllFilter(), false);
 		int c = 1;

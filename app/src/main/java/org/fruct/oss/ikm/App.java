@@ -69,7 +69,6 @@ public class App extends Application {
 	public static Context getContext() {
 		if (context == null)
 			throw new IllegalStateException("Application not initialized yet");
-		
 		return context;
 	}
 

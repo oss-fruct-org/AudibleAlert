@@ -3,9 +3,12 @@ package org.fruct.oss.ikm;
 
 import android.app.ActivityManager;
 import android.app.Application;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.View;
@@ -27,8 +30,11 @@ public class MainActivity extends ActionBarActivity {
 	public static final String SHOW_PATH = "org.fruct.oss.ikm.SHOW_PATH";
 	
 	public static final String SHOW_PATH_TARGET = "org.fruct.oss.ikm.SHOW_PATH_TARGET";
+    public static final String STOP_TRACKING_SERVICE = "org.fruct.oss.ikm.STOP_TRACKING_SERVICE";
 
 	private Thread debugThread;
+
+    BroadcastReceiver quitReceiver;
 	
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -53,6 +59,17 @@ public class MainActivity extends ActionBarActivity {
 			}
 		};*/
 		//debugThread.start();
+
+        quitReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                log.error("Received exiting APP");
+                LocalBroadcastManager.getInstance(context).unregisterReceiver(quitReceiver);
+                finish();
+            }
+        };
+
+        //LocalBroadcastManager.getInstance(this).registerReceiver(quitReceiver, new IntentFilter("EXITING APP"));
 
 		startService(new Intent(this, RemoteContentService.class));
 		startService(new Intent(this, DataService.class));
@@ -93,8 +110,12 @@ public boolean onCreateOptionsMenu(Menu menu) {
     public void onExitButtonClick(View v){
         Intent intent = new Intent(Intent.ACTION_MAIN);
         intent.addCategory(Intent.CATEGORY_HOME);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
+       intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(STOP_TRACKING_SERVICE));
+        finish();
+       //startActivity(intent);
+
     }
 
 }

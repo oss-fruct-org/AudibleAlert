@@ -1,5 +1,6 @@
 package org.fruct.oss.aa;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.location.Location;
@@ -14,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,22 +32,20 @@ public class DistanceTracker implements LocationReceiver.Listener {
     private final List<PointDesc> points = new ArrayList<PointDesc>();
     private Cursor currentCursor;
 
+    private SharedPreferences pref;
     //test
     private float minDistance = 100000f;
+    private int CATEGORY_RADIUS = 30;
+
+    private static Location lastLocation;
+    private static GeoPoint lastPoint;
+    private Context context;
 
     public DistanceTracker(LocationReceiver locationReceiver) {
         this.locationReceiver = locationReceiver;
 
-        /*
-        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(App.getContext());
-        String activeTrackName = pref.getString(TrackManager.PREF_TRACK_MODE, null);
-        Track track = trackManager.getTrackByName(activeTrackName);
+        pref = PreferenceManager.getDefaultSharedPreferences(App.getContext());
 
-        if (track != null) {
-            pointsCursorHolder = trackManager.loadPoints(track);
-        } else {
-            pointsCursorHolder = trackManager.loadLocalPoints();
-        } */
     }
 
     public void addListener(Listener listener) {
@@ -57,7 +57,7 @@ public class DistanceTracker implements LocationReceiver.Listener {
     }
 
     public void start() {
-        log.debug("DistanceTracker start************");
+        log.debug("DistanceTracker start");
 
         locationReceiver.addListener(this);
         locationReceiver.start();
@@ -72,19 +72,22 @@ public class DistanceTracker implements LocationReceiver.Listener {
 
     @Override
     public void newLocation(Location location) {
-        log.debug("@newLocation in DistanceTracker**********");
+        if(points.size() == 0)
         updatePoints();
+        lastLocation = location;
         ArrayList<PointDesc> outRange = new ArrayList<PointDesc>();
         ArrayList<PointDesc> inRange = new ArrayList<PointDesc>();
 
-        GeoPoint geoPoint = new GeoPoint(location);
+        lastPoint = new GeoPoint(location);
         for (PointDesc point : points) {
             boolean isPointInRange = pointsInRange.contains(point);
 
-            float distanceMeters = point.toPoint().distanceTo(geoPoint);
+            float distanceMeters = point.toPoint().distanceTo(lastPoint);
+
             if(distanceMeters < minDistance)
                 minDistance = distanceMeters;
 
+            radius = CategoriesManager.getRadiusForCategory(point.getCategory());
             if (distanceMeters < radius && !isPointInRange) {
                 inRange.add(point);
             } else if (distanceMeters >= radius && isPointInRange) {
@@ -101,8 +104,6 @@ public class DistanceTracker implements LocationReceiver.Listener {
             pointsInRange.add(point);
             notifyPointInRange(point);
         }
-
-        log.debug("Min Distance = " + minDistance + "\n");
     }
 
     private void notifyPointInRange(PointDesc point) {
@@ -129,14 +130,26 @@ public class DistanceTracker implements LocationReceiver.Listener {
         void pointOutRange(PointDesc point);
     }
 
-    private void updatePoints(){
+    public void updatePoints(){
         List<PointDesc> filteredPoints = PointsManager.getInstance().getFilteredPoints();
         points.clear();
 
         for (PointDesc point : filteredPoints) {
             points.add(point);
         }
-
-
     }
+
+    public static boolean isInRange(PointDesc point, int rad){
+        if(lastPoint == null)
+            return false;
+
+        int distance = point.toPoint().distanceTo(lastPoint);
+
+        if(distance < rad)
+            return true;
+        else
+            return false;
+    }
+
+
 }

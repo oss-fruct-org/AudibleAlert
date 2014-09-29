@@ -18,7 +18,7 @@
         yourapp:showAsAction="ifRoom"/>
     <item
         android:id="@+id/action_place"
-        android:icon="@drawable/ic_action_place"
+        android:icon="@drawable/list"
         android:title="@string/action_place"
         yourapp:showAsAction="ifRoom"/>
     <item

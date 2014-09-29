@@ -7,12 +7,14 @@ import android.content.IntentFilter;
 import android.net.Uri;
 import android.support.v4.content.LocalBroadcastManager;
 
+import org.fruct.oss.ikm.MainActivity;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.gets.CategoriesList;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 
@@ -23,66 +25,81 @@ import java.util.ArrayList;
  */
 public class AudioManager {
 
-    /**
-     * TODO: get this from strings file or wherever
-     * TODO: add #welcome and #goodbye messages.
-     */
-    public static final String LEFT = "left";
-    public static final String RIGHT = "right";
-    public static final String FORWARD = "forward";
-    public static final String BACK= "back";
-    public static final String HIGH_CURB = "high_curb";
-
     private final static Logger log = LoggerFactory.getLogger(AudioPlayer.class);
 
     private String packagename;
+    public static final String WELCOME = "welcome";
+    public static final String GOODBYE = "goodbye";
 
-    public Uri left_uri;
-    public Uri right_uri;
-    public Uri forward_uri;
-    public Uri back_uri;
-    public Uri high_curb_uri;
 
+    // TODO: in case of need to check whether you already left the zone of queued point, add list of points
     private ArrayList<Uri> uris;
     private Uri playingNow;
     private AudioPlayer audioPlayer;
 
+    private Context context;
+
+    private boolean TTS_enabled;
+    public boolean keepPlaying = true;
+
+    TextToSpeachPlayer ttsp;
+
     private BroadcastReceiver audioFinishedReceiver;
+    private BroadcastReceiver stopTrackingReceiver;
 
     public AudioManager(Context ctx){
+        log.error("Created AudioManager ^^^^^^^^^^^^^^^^^^");
         uris = new ArrayList<Uri>();
 
+        CategoriesManager.init();
+        context = ctx;
         audioFinishedReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 playNext();
-                log.debug("AUDIOPLAYER: PLAYING NEXT ^^^^^^^^");
+                //log.debug("AUDIOPLAYER: PLAYING NEXT ^^^^^^^^");
             }
         };
-        ctx.registerReceiver(audioFinishedReceiver, new IntentFilter(AudioPlayer.BC_ACTION_STOP_PLAY));
+       context.registerReceiver(audioFinishedReceiver, new IntentFilter(AudioPlayer.BC_ACTION_STOP_PLAY));
 
-        packagename = ctx.getPackageName();
-        initUris();
-        audioPlayer = new AudioPlayer(ctx);
-        uris.add(left_uri);
-        uris.add(left_uri);
-        uris.add(right_uri);
-        uris.add(right_uri);
+        stopTrackingReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                    log.trace("Playing exiting message");
+                    stopPlaying();
+            }
+        };
+
+        LocalBroadcastManager.getInstance(context).registerReceiver(stopTrackingReceiver,
+                new IntentFilter(MainActivity.STOP_TRACKING_SERVICE));
+
+        audioPlayer = new AudioPlayer(context);
+        ttsp = new TextToSpeachPlayer(context, TextToSpeachPlayer.TTS_PLAYER_EN);
+        TTS_enabled = ttsp.checkInit();
+
+
+    }
+
+    public void startPlaying(){
+        keepPlaying = true;
+        uris.add(CategoriesManager.getUriForCategory(WELCOME));
         playNext();
     }
 
-    public void queueToPlay(PointDesc point){
+
+    public void queueToPlay(PointDesc point, String dir){
         Uri category, direction;
         category = getUriByCategory(point.getCategory());
-        direction = getUriByDirection(point.getRelativeDirection());
-        uris.add(category);
-        uris.add(direction);
-
-
+        direction = getUriByDirection(dir);
+        if(category!= Uri.EMPTY && direction != Uri.EMPTY) {
+            uris.add(category);
+            uris.add(direction);
+        }else{
+            log.error("Couldn't add point to play queue");
+        }
     }
 
     public void playNext(){
-
         if(uris.size() == 0){
             return;
         }
@@ -93,40 +110,26 @@ public class AudioManager {
     }
 
     private Uri getUriByCategory(String cat){
-        Uri uri = Uri.EMPTY;
-
-        if(cat.equalsIgnoreCase(HIGH_CURB))
-                return high_curb_uri;
-
-
-
-        return uri;
+        return  CategoriesManager.getUriForCategory(cat);
     }
 
-    private Uri getUriByDirection(Direction.RelativeDirection relDirection){
-        Uri uri = Uri.EMPTY;
-        String dir = (String) relDirection.getDescription();
-
-        if(dir.equalsIgnoreCase(RIGHT))
-            return right_uri;
-        if(dir.equalsIgnoreCase(FORWARD))
-            return forward_uri;
-        if(dir.equalsIgnoreCase(LEFT))
-            return left_uri;
-        if(dir.equalsIgnoreCase(BACK))
-            return back_uri;
-        return uri;
+    private Uri getUriByDirection(String dir){
+        return CategoriesManager.getUriForDirection(dir);
     }
 
-    private void initUris(){
-        String folder = "android.resource://" + packagename + "/";
-        left_uri = Uri.parse(folder + R.raw.left);
-        right_uri = Uri.parse(folder + R.raw.right);
-        back_uri = Uri.parse(folder + BACK);
-        forward_uri = Uri.parse(folder + R.raw.forward);
-        high_curb_uri = Uri.parse(folder + R.raw.high_curb);
+
+    public void stopPlaying(){
+        keepPlaying = false;
+        uris.clear();
+        audioPlayer.stopAudioTrack();
+        audioPlayer.startAudioTrack(CategoriesManager.getUriForCategory(GOODBYE));
     }
 
+    public void onDestroy(){
+        ttsp.destroy();
+        context.unregisterReceiver(audioFinishedReceiver);
+        LocalBroadcastManager.getInstance(context).unregisterReceiver(stopTrackingReceiver);
+    }
 
 }
 

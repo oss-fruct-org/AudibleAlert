@@ -59,6 +59,7 @@ public class JSONPointLoader extends PointLoader {
 		points.add(poi);
 	}
 
+
 	@Override
 	public void loadPoints() {
 		BufferedReader reader = null;

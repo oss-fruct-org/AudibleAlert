@@ -10,6 +10,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -43,6 +44,7 @@ public class NetworkStorage implements ContentStorage {
 		if (items == null) {
 			throw new IOException("No one of remote content roots are available");
 		}
+        removeNavigationItems();
 	}
 
 	private List<ContentItem> getContentList(List<String> contentUrls, Set<String> visited) throws IOException {
@@ -146,6 +148,14 @@ public class NetworkStorage implements ContentStorage {
 	}
 
 
+    private void removeNavigationItems(){
+        for (Iterator<ContentItem> iter = items.listIterator(); iter.hasNext(); ) {
+            ContentItem a = iter.next();
+            if (a.getType().equals("graphhopper-map")) {
+                iter.remove();
+            }
+        }
+    }
 
 	@Override
 	public List<ContentItem> getContentList() {

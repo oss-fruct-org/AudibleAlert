@@ -42,7 +42,20 @@ public class PointsManager {
 
 	private List<Filter> filters = new ArrayList<Filter>();
 
+    private List<Filter> distanceFilters = new ArrayList<Filter>();
+
+    private List<Filter> setFilters = new ArrayList<Filter>();
+
 	private List<PointsListener> listeners = new ArrayList<PointsListener>();
+
+    int[] distances =  { 10, 15, 30, 50, 75, 100, 200, 300, 500};
+
+    String [][] sets = new String[][]{
+           new String [] {"Inns", "hotels" , "hostels"},
+           new String [] {"Sightseeing","museums", "sights", "monasteries" , "monuments"},
+           new String [] {"Vacation", "natural monuments", "Sanatoriums"}
+    };
+
 
 	private GetsPointLoader getsPointsLoader;
 	private PointsStorage storage;
@@ -168,7 +181,9 @@ public class PointsManager {
 				points.addAll(pointLoader.getPoints());
 			}
 
-        	createFiltersFromPoints();
+            createFiltersFromPoints(true);
+            createFiltersFromPoints(false);
+            createSetFilters();
         	notifyFiltersUpdated();
 		}
 	}
@@ -193,7 +208,7 @@ public class PointsManager {
         //removeUnusedCategories(names);
 
         for (String str : names) {
-            log.trace("Filter for category {}", str);
+           // log.trace("Filter for category {}", str);
 			CategoryFilter filter = new CategoryFilter(str, str);
 			filters.add(filter);
 			if (oldDiabledFilters.contains(filter.getString())) {
@@ -201,6 +216,55 @@ public class PointsManager {
 			}
 		}
 	}
+
+    /**
+     * Create distance or category filters
+     *
+     */
+    private void createFiltersFromPoints(boolean createDistanceFilters){
+        if(!createDistanceFilters)
+            createFiltersFromPoints();
+
+        distanceFilters.clear();
+        int count = distances.length;
+
+        for(int i = 0; i < count; i++){
+            DistanceFilter filter = new DistanceFilter(distances[i]);
+            distanceFilters.add(filter);
+        }
+
+        distanceFilters.add(new DistanceFilter(10000));
+    }
+
+    /**
+     * Create set of SetFilters that contain multiple category-filters
+     * which are defined in sets[][] array
+     */
+    private void createSetFilters(){
+        setFilters.clear();
+        Set<Filter> groupedFilters = new HashSet<Filter>();
+        Set<Filter> rest = new HashSet<Filter>();
+        for(Filter flt : filters)
+            rest.add(flt);
+        for(int i =0; i < sets.length; i++){
+            groupedFilters.clear();
+            if(sets[i].length < 2)
+                continue;
+            for(int j = 1; j < sets[i].length; j++){
+                for(Filter flt : filters){
+                    if(flt.getString().equalsIgnoreCase(sets[i][j])) {
+                        groupedFilters.add(flt);
+                        rest.remove(flt);
+                        continue;
+                    }
+                }
+            }
+            setFilters.add(new SetFilter(sets[i][0],groupedFilters));
+
+        }
+
+        setFilters.add(new SetFilter("Etc", rest));
+    }
 
 
     private void removeUnusedCategories(Set<String> names){
@@ -210,7 +274,7 @@ public class PointsManager {
         // for(..)needed.add(..)
         //needed.add("Hotels");
         for(String str : names){
-            log.trace("Cheking category {}", str);
+           // log.trace("Cheking category {}", str);
             if(needed.contains(str))
                 remain.add(str);
         }
@@ -243,11 +307,12 @@ public class PointsManager {
 		}
 	}
 
+
 	private void filterPoints(List<PointDesc> in, List<PointDesc> out) {
 		out.clear();
 		Utils.select(in, out, new Utils.Predicate<PointDesc>() {
             public boolean apply(PointDesc point) {
-                for (Filter filter : filters) {
+                for (Filter filter : setFilters) {
                     if (filter.isActive() && filter.accepts(point))
                         return true;
                 }
@@ -257,8 +322,12 @@ public class PointsManager {
 	}
 
 	public List<Filter> getFilters() {
-		return Collections.unmodifiableList(filters);
+		return Collections.unmodifiableList(setFilters);
 	}
+
+    public List<Filter> getDistanceFilters() {
+        return Collections.unmodifiableList(distanceFilters);
+    }
 
 	public void notifyFiltersUpdated() {
 		List<PointDesc> filteredPoints = new ArrayList<PointDesc>();

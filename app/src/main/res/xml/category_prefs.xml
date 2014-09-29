@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    
+    <!-- <EditTextPreference -->
+    <!-- android:defaultValue="0" -->
+    <!-- android:inputType="number" -->
+    <!-- android:key="nearest_points" -->
+    <!-- android:summary="Show all" -->
+    <!-- android:title="Nearest points" /> -->
+
+
+
+    <ListPreference
+        android:defaultValue="50"
+        android:entries="@array/alert_radius_strings"
+        android:entryValues="@array/alert_radius_strings"
+        android:title="@string/pref_alert_radius"
+        android:key="Alert radius"/>
+
+    <ListPreference
+        android:defaultValue="50"
+        android:entries="@array/alert_radius_strings"
+        android:entryValues="@array/alert_radius_strings"
+        android:title="@string/pref_alert_radius"
+        android:key="Alert radius"/>
+
+
+    <ListPreference
+        android:defaultValue="10"
+        android:entries="@array/alert_radius_strings"
+        android:entryValues="@array/alert_radius_strings"
+        android:title="@string/pref_alert_radius"
+        android:key="High curb alert radius"/>
+
+    <!--
+    <org.fruct.oss.ikm.OnlineContentPreference
+        contentType="mapsforge-map"
+        android:key="offline_map"
+        android:defaultValue=""
+        android:title="@string/pref_offline_map_path" />
+
+
+    <org.fruct.oss.ikm.OnlineContentPreference
+        contentType="graphhopper-map"
+        android:key="navigation_data"
+        android:defaultValue=""
+        android:title="@string/pref_navigation_data" />
+
+-->
+    </PreferenceScreen>

@@ -186,7 +186,8 @@ public class DetailsFragment extends Fragment {
 				startActivity(intent);
 			}
 		});
-		
+
+        /*
 		ImageButton pathButton = (ImageButton) getActivity().findViewById(R.id.search_place_button);
 		pathButton.setOnClickListener(new View.OnClickListener() {
 			@Override
@@ -198,7 +199,7 @@ public class DetailsFragment extends Fragment {
 				startActivity(intent);
 			}
 		});
-        /*
+
 		ImageButton searchButton = (ImageButton) getActivity().findViewById(R.id.search_button);
 		searchButton.setOnClickListener(new View.OnClickListener() {
 			@Override
