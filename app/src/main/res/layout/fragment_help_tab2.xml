@@ -73,7 +73,7 @@
             android:layout_height="wrap_content"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:text="Stop"
+            android:text="@string/action_stop"
             android:layout_alignParentTop="true"
             />
 

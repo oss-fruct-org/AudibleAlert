@@ -24,6 +24,11 @@ public class DistanceFilter implements Filter {
     }
 
     @Override
+    public String getName() {
+        return null;
+    }
+
+    @Override
     public boolean isActive() {
         return active;
     }

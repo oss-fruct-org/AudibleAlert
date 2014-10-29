@@ -363,8 +363,8 @@ public class DirectionService extends Service implements PointsListener, Distanc
 		locationReceiver.start();
         distanceTracker.start();
         distanceTracker.updatePoints();
-		locationReceiver.sendLastLocation();
         audioManager.startPlaying();
+		locationReceiver.sendLastLocation();
 	}
 
 	@Override
@@ -601,7 +601,7 @@ public class DirectionService extends Service implements PointsListener, Distanc
 
         double relativeBearing = last.bearingTo(point.toPoint());
 
-        double bearing = (myBearing - relativeBearing) * -1;
+        double bearing =  relativeBearing - myBearing;
         if(bearing < 0)
             bearing += 360;
 
@@ -626,6 +626,7 @@ public class DirectionService extends Service implements PointsListener, Distanc
     }
 
     public int onStartCommand(Intent intent, int flags, int startId) {
+        log.error("Started DirectionService");
         return START_STICKY;
     }
 

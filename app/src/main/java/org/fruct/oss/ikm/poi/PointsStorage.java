@@ -15,7 +15,7 @@ import java.util.List;
 public class PointsStorage {
 	private static final int VERSION = 1;
 	private static final String[] QUERY_COLUMNS = {
-			"lat", "lon", "name", "category", "desc", "timestamp"
+			"lat", "lon", "name", "cat_id", "category", "desc", "timestamp"
 	};
 
 	private final Context context;
@@ -38,6 +38,7 @@ public class PointsStorage {
 		values.put("lat", point.toPoint().getLatitudeE6());
 		values.put("lon", point.toPoint().getLongitudeE6());
 		values.put("name", point.getName());
+        values.put("cat_id", point.getCat_id());
 		values.put("category", point.getCategory());
 		values.put("desc", point.getDescription());
 		values.put("timestamp", System.currentTimeMillis());
@@ -66,8 +67,10 @@ public class PointsStorage {
 
 	private PointDesc createFromCursor(Cursor cursor) {
 		PointDesc point = new PointDesc(cursor.getString(2), cursor.getInt(0), cursor.getInt(1));
-		point.setCategory(cursor.getString(3));
-		point.setDescription(cursor.getString(4));
+        point.setCat_id(cursor.getString(3));
+		point.setCategory(cursor.getString(4));
+		point.setDescription(cursor.getString(5));
+
 		return point;
 	}
 
@@ -94,6 +97,7 @@ public class PointsStorage {
 					"lat INTEGER," +
 					"lon INTEGER, " +
 					"name TEXT NOT NULL," +
+                    "cat_id TEXT," +
 					"category TEXT," +
 					"desc TEXT," +
 					"timestamp INTEGER," +

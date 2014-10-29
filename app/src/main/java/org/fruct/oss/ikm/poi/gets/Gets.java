@@ -121,7 +121,7 @@ public class Gets implements IGets {
 			log.trace("Req {}", requestBuilder.toString());
 			Response resp = processResponse(responseStr);
 			if (resp.getCode() != 0) {
-				log.warn("getCategories returned with code {} message '{}'", resp.getCode(), resp.getMessage());
+				log.warn("getPoints returned with code {} message '{}'", resp.getCode(), resp.getMessage());
 				throw new LoginException("Server return error");
 			}
 
@@ -130,7 +130,8 @@ public class Gets implements IGets {
 			List<PointDesc> pointList = Utils.map(document.getPlacemarks(), new Utils.Function<PointDesc, Kml.Placemark>() {
                 @Override
                 public PointDesc apply(Kml.Placemark placemark) {
-                    return placemark.toPointDesc().setCategory(category == null ? "Unclassified" : category.getName());
+                  //  log.error("Cat with name " + category.getName() + " has id = " + category.getId());
+                    return placemark.toPointDesc().setCategory(category == null ? "Unclassified" : category.getName()).setCat_id(category.getId()+"");
                 }
             });
 			return pointList;

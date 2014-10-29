@@ -26,7 +26,7 @@
     <string name="refresh_desc">Кнопка обновления</string>
     <string name="stop_desc">Кнопка остановки прерывает текущую загрузку.</string>
     <string name="sights_screen">Экран точек</string>
-    <string name="sights_screen_desc">На этом экране вы можете просматривать доступные точки и фильтровать их по расстонию до них.
+    <string name="sights_screen_desc">На этом экране вы можете просматривать доступные точки, сортированные по расстоянию до них.
 Используйте закладки, чтобы отобразить точки из одной категории.</string>
     <string name="additional_content_title">Сторонний контент</string>
     <string name="additional_content">Вы можете поместить сторонние карты в папку "roadsigns" на SD-карте</string>

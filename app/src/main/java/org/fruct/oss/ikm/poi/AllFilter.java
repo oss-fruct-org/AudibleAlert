@@ -17,7 +17,12 @@ public class AllFilter implements Filter {
 		return "All";
 	}
 
-	@Override
+    @Override
+    public String getName() {
+        return null;
+    }
+
+    @Override
 	public boolean isActive() {
 		return isActive;
 	}

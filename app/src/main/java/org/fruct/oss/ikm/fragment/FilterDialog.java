@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 
+import org.fruct.oss.aa.CategoriesManager;
 import org.fruct.oss.ikm.poi.Filter;
 import org.fruct.oss.ikm.poi.PointsManager;
 
@@ -41,6 +42,9 @@ public class FilterDialog extends DialogFragment {
 	@SuppressWarnings("unchecked")
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
+
+        String locale =  getResources().getConfiguration().locale.getLanguage();
+
 		final List<Filter> filters = PointsManager.getInstance().getFilters();
 
 		if (savedInstanceState != null) {
@@ -60,7 +64,10 @@ public class FilterDialog extends DialogFragment {
 
 		for (int i = 0; i < filters.size(); i++) {
 			Filter filter = filters.get(i);
-			filterNames[i] = filter.getString();
+            filterNames[i] = filter.getString();
+            /*if(locale.equals("ru")) {
+                filterNames[i] = CategoriesManager.getName(filter.getString());
+            } */
 			if (savedInstanceState == null)
 				filterChecked[i] = filter.isActive();
 		}

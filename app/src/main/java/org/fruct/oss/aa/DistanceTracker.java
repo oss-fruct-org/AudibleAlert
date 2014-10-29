@@ -151,5 +151,12 @@ public class DistanceTracker implements LocationReceiver.Listener {
             return false;
     }
 
+    public static int getDistanceTo(PointDesc point){
+        if(lastPoint == null)
+            return 0;
+
+        return point.toPoint().distanceTo(lastPoint);
+    }
+
 
 }

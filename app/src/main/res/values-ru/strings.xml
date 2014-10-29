@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AudibleAlert</string>
+    <string name="app_name">Аудио помощник</string>
     <string name="action_settings">Настройки</string>
     <string name="action_search">Поиск</string>
     <string name="action_place">Показать достопримечательности</string>
@@ -51,7 +51,23 @@
     <string name="pref_mapmatching">Привязка к дороге</string>
     <string name="str_updating_points">Обновляются точки…</string>
     <string name="str_cant_delete_active_content">Нельзя удалить используемые данные</string>
-    <string name="str_starting_download">Starting download...</string>
+    <string name="str_starting_download">Загрузка начинается...</string>
+
+    <string name="gets_pref_category">Настройки GeTs</string>
+    <string name="enable_gets_pref">Разрешить использование GeTS</string>
+    <string name="gets_server">GeTS Сервер</string>
+
+    <string name="exit_button">Выход</string>
+
+    <string name="about_text">    Приложение использует данные из http://openstreetmap.org\n\n
+    Приложение является частью гранта KA432 программы “Karelia ENPI CBC”, которая фондируется Европейским союзом, Российской федерацией и Республикой Финляндией.
+    </string>
+
+
+    <string name="crosswalk">Пешеходный переход</string>
+    <string name="rough_roads">Неровная дорога</string>
+    <string name="ramp">Пандус</string>
+    <string name="slope">Уклон</string>
 
     <plurals  name="distance_meters">
         <item quantity="one">Расстояние: %d метр</item>

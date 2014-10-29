@@ -24,7 +24,7 @@
         android:entryValues="@array/pref_nearest_points_values"
         android:key="nearest_points"
         android:summary="Show all"
-        android:title="Nearest points" />
+        android:title="Nearest points"/>
     <!--
         <ListPreference
             android:defaultValue="50"
@@ -127,17 +127,17 @@
         </PreferenceCategory>
 
         <PreferenceCategory
-            android:title="GeTS preferences"
+            android:title="@string/gets_pref_category"
             android:key="gets_preferences">
             <CheckBoxPreference
                 android:defaultValue="true"
                 android:key="gets_enable"
-                android:title="Enable GeTS"/>
+                android:title="@string/enable_gets_pref"/>
 
             <EditTextPreference
-                android:defaultValue="http://oss.fruct.org/projects/gets/service"
+                android:defaultValue="http://gets.cs.petrsu.ru/obstacle/service/"
                 android:key="gets_server"
-                android:title="GeTS Server"
+                android:title="@string/gets_server"
                 android:inputType="textUri"/>
 
             <ListPreference

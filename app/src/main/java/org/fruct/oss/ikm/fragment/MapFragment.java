@@ -35,7 +35,6 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
@@ -45,6 +44,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.fruct.oss.aa.CategoriesManager;
+import org.fruct.oss.aa.PointsOverlay;
 import org.fruct.oss.ikm.DataService;
 import org.fruct.oss.ikm.HelpTabActivity;
 import org.fruct.oss.ikm.MainActivity;
@@ -67,8 +67,6 @@ import org.fruct.oss.ikm.utils.bind.BindSetter;
 import org.osmdroid.DefaultResourceProxyImpl;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.bonuspack.overlays.DefaultInfoWindow;
-import org.osmdroid.bonuspack.overlays.ExtendedOverlayItem;
-import org.osmdroid.bonuspack.overlays.ItemizedOverlayWithBubble;
 import org.osmdroid.events.MapListener;
 import org.osmdroid.events.ScrollEvent;
 import org.osmdroid.events.ZoomEvent;
@@ -153,6 +151,7 @@ public class MapFragment extends Fragment implements MapListener,
 	private boolean providersToastShown;
 
 	private Overlay poiOverlay;
+    private PointsOverlay po;
     private DefaultResourceProxyImpl mResourceProxy;
 
     static enum State {
@@ -247,7 +246,7 @@ public class MapFragment extends Fragment implements MapListener,
 		super.onCreate(savedInstanceState);
 		setHasOptionsMenu(true);
 
-        CategoriesManager.init();
+
 
 		// Bind DirectionService
 		Intent intent = new Intent(getActivity(), DirectionService.class);
@@ -402,6 +401,7 @@ public class MapFragment extends Fragment implements MapListener,
 		// Test lines overlay
 		//TestLinesOverlay over = new TestLinesOverlay(getActivity(), mapView);
 		//mapView.getOverlays().add(over);
+
 	}
     
 	@Override
@@ -438,6 +438,7 @@ public class MapFragment extends Fragment implements MapListener,
 
 		// Listen for new points in PointManager
 		PointsManager.getInstance().addListener(this);
+
 
 		final GeoPoint initialPosition;
 		final int initialZoom;
@@ -506,6 +507,9 @@ public class MapFragment extends Fragment implements MapListener,
 				}
 			}
 		});
+
+        // Set initial position to allow GeTs to load points
+       PointsManager.getInstance().updatePosition(initialPosition);
 	}
 
 
@@ -639,6 +643,8 @@ public class MapFragment extends Fragment implements MapListener,
 		switch (item.getItemId()) {
 		case R.id.action_search:			
 			directionService.fakeLocation(Utils.copyGeoPoint(mapView.getMapCenter()));
+            if (isTracking)
+                stopTracking();
 			break;
 			
 		case R.id.action_place:
@@ -761,9 +767,24 @@ public class MapFragment extends Fragment implements MapListener,
 
 		if (poiOverlay != null)
 			mapView.getOverlays().remove(poiOverlay);
+        if (po != null)
+            mapView.getOverlays().remove(po);
 
 		List<PointDesc> points = PointsManager.getInstance()
 				.getFilteredPoints();
+
+        List<PointDesc> withBitmaps = new ArrayList<PointDesc>();
+        List<PointDesc> withoutBitmaps = new ArrayList<PointDesc>();
+
+        for(PointDesc p : points){
+            if(CategoriesManager.getIconForCategory(p.getCategory()) != null){
+                withBitmaps.add(p);
+            }else{
+                withoutBitmaps.add(p);
+            }
+        }
+
+        /*
 		List<ExtendedOverlayItem> items2 = Utils.map(points, new Utils.Function<ExtendedOverlayItem, PointDesc>() {
             public ExtendedOverlayItem apply(PointDesc point) {
                 ExtendedOverlayItem item = new ExtendedOverlayItem(point.getName(), point
@@ -771,10 +792,12 @@ public class MapFragment extends Fragment implements MapListener,
                 item.setRelatedObject(point);
                 return item;
             }
-        });
+        }); */
 
+        po = new PointsOverlay(context,withBitmaps);
+        po.setEnabled(true);
 
-        List<OverlayItem> items3 = Utils.map(points, new Utils.Function<OverlayItem, PointDesc>(){
+        List<OverlayItem> items3 = Utils.map(withoutBitmaps, new Utils.Function<OverlayItem, PointDesc>(){
             public OverlayItem apply(PointDesc point){
                 OverlayItem item = new OverlayItem(point.getName(),
                         point.getCategory(), point.toPoint());
@@ -782,22 +805,9 @@ public class MapFragment extends Fragment implements MapListener,
             }
         });
 
-        if(testMarker == null)
-            log.error("testmarker didnt load");
-
-        for(OverlayItem oi : items2)
-            oi.setMarker(defaultMarker);
-        for(OverlayItem oi : items2){
-            if(oi.getSnippet().equalsIgnoreCase("hotels"))
-               oi.setMarker(hotelMarker);
-            if(oi.getSnippet().equalsIgnoreCase("museums") && testMarker != null)
-                oi.setMarker(testMarker);
-        }
 
 
         mResourceProxy = new DefaultResourceProxyImpl(context);
-
-
         ItemizedIconOverlay.OnItemGestureListener<OverlayItem> GListener= new ItemizedIconOverlay.OnItemGestureListener<OverlayItem>() {
             @Override
             public boolean onItemSingleTapUp(int index, OverlayItem item) {
@@ -810,8 +820,8 @@ public class MapFragment extends Fragment implements MapListener,
             }
         };
 
-		infoWindow = new POIInfoWindow(R.layout.bonuspack_bubble, mapView);
-		poiOverlay = new ItemizedOverlayWithBubble<ExtendedOverlayItem>(
+		/*infoWindow = new POIInfoWindow(R.layout.bonuspack_bubble, mapView);
+		 poiOverlay = new ItemizedOverlayWithBubble<ExtendedOverlayItem>(
 				context, items2, mapView, infoWindow) {
 			@Override
 			public boolean onSingleTapUp(MotionEvent e, MapView mapView) {
@@ -819,13 +829,11 @@ public class MapFragment extends Fragment implements MapListener,
 					infoWindow.close();
 				return super.onSingleTapUp(e, mapView);
 			}
-		};
+		}; */
 
+        poiOverlay = new ItemizedIconOverlay<OverlayItem>(items3, defaultMarker, GListener, mResourceProxy );
 
-       // poiOverlay = new ItemizedIconOverlay<OverlayItem>(items3, defaultMarker, GListener, mResourceProxy );
-
-
-
+        mapView.getOverlayManager().add(po);
 		mapView.getOverlays().add(poiOverlay);
 		log.trace("MapFragment.updatePOIOverlay EXIT");
 	}
@@ -944,7 +952,6 @@ public class MapFragment extends Fragment implements MapListener,
 
 	@Override
 	public void onScroll() {
-        log.error("In OnScroll and isTracking = "  + isTracking);
 		if (isTracking)
 			stopTracking();
 	}
@@ -1047,7 +1054,8 @@ public class MapFragment extends Fragment implements MapListener,
 
 		if (key.equals(SettingsActivity.SHOW_ACCURACY)) {
 			if (myPositionOverlay != null)
-				myPositionOverlay.setShowAccuracy(sharedPreferences.getBoolean(SettingsActivity.SHOW_ACCURACY, false));
+                myPositionOverlay.setShowAccuracy(sharedPreferences.getBoolean(SettingsActivity.SHOW_ACCURACY, false));
+
 			mapView.invalidate();
 		} else if (key.equals(SettingsActivity.OFFLINE_MAP) || key.equals(SettingsActivity.USE_OFFLINE_MAP)) {
 			setupOfflineMap();
@@ -1088,7 +1096,8 @@ public class MapFragment extends Fragment implements MapListener,
 
         @Override
         protected Object doInBackground(Object[] objects) {
-            testMarker = CategoriesManager.drawableFromUrlSafe("http://kappa.cs.karelia.ru/~kolomens/museum.png");
+            CategoriesManager.init();
+            testMarker = CategoriesManager.drawableFromUrlSafe("http://kappa.cs.karelia.ru/~kolomens/bakabaka.png");
             updatePOIOverlay();
 
             return null;

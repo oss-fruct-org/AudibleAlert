@@ -2,6 +2,7 @@ package org.fruct.oss.ikm.poi;
 
 import android.content.SharedPreferences;
 import android.content.res.AssetManager;
+import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 
 import org.fruct.oss.ikm.App;
@@ -14,8 +15,11 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -46,7 +50,11 @@ public class PointsManager {
 
     private List<Filter> setFilters = new ArrayList<Filter>();
 
-	private List<PointsListener> listeners = new ArrayList<PointsListener>();
+    private boolean disabilitiesLoaded = false;
+
+    List<String[]> disabs = new ArrayList<String[]>();
+
+    private List<PointsListener> listeners = new ArrayList<PointsListener>();
 
     int[] distances =  { 10, 15, 30, 50, 75, 100, 200, 300, 500};
 
@@ -62,6 +70,7 @@ public class PointsManager {
 
 	public PointsManager() {
 		storage = new PointsStorage(App.getContext());
+       new disablititiesLoadAsyncTask().execute();
 	}
 
 	public void addPointLoader(final PointLoader pointLoader) {
@@ -112,6 +121,7 @@ public class PointsManager {
 				pointLoader.loadPoints();
 				if (pointLoader.getPoints() != currentPoints) {
 					storage.insertPoints(pointLoader.getPoints(), pointLoader.getName());
+
 					recreatePointList();
 				}
 			}
@@ -169,7 +179,6 @@ public class PointsManager {
 
 		getsPointsLoader = new GetsPointLoader(getsServer);
 		getsPointsLoader.setRadius(radius);
-
 		addPointLoader(getsPointsLoader);
 	}
 
@@ -179,20 +188,30 @@ public class PointsManager {
 
 			for (PointLoader pointLoader : loaders) {
 				points.addAll(pointLoader.getPoints());
-			}
 
-            createFiltersFromPoints(true);
-            createFiltersFromPoints(false);
-            createSetFilters();
-        	notifyFiltersUpdated();
+			}
+           // getCategoriesFromGets();
+
+            createFilters();
+
+
 		}
 	}
 
+    private void createFilters(){
+        createDistanceFilters();
+        createCategoryFilters();
+        if(disabilitiesLoaded)
+            createSetsFilters();
 
-	private void createFiltersFromPoints() {
+        notifyFiltersUpdated();
+    }
+
+
+	private void createCategoryFilters() {
         log.trace("Recreating filters");
 
-        Set<String> names = new HashSet<String>();
+        HashMap<String, String> names = new HashMap<String, String>();
 		Set<String> oldDiabledFilters = new HashSet<String>();
 
 		for (Filter filter : filters) {
@@ -203,28 +222,27 @@ public class PointsManager {
 
         filters.clear();
 		for (PointDesc point : points)
-			names.add(point.getCategory());
+			names.put(point.getCategory(), point.getCat_id());
 
         //removeUnusedCategories(names);
 
-        for (String str : names) {
-           // log.trace("Filter for category {}", str);
-			CategoryFilter filter = new CategoryFilter(str, str);
-			filters.add(filter);
-			if (oldDiabledFilters.contains(filter.getString())) {
-				filter.setActive(false);
-			}
-		}
+        Iterator it = names.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry pairs = (Map.Entry) it.next();
+            // log.trace("Filter for category {}", str);
+            CategoryFilter filter = new CategoryFilter(pairs.getKey()+"", pairs.getKey()+"", pairs.getValue()+"");
+            filters.add(filter);
+            if (oldDiabledFilters.contains(filter.getString())) {
+                filter.setActive(false);
+            }
+        }
 	}
 
     /**
      * Create distance or category filters
      *
      */
-    private void createFiltersFromPoints(boolean createDistanceFilters){
-        if(!createDistanceFilters)
-            createFiltersFromPoints();
-
+    private void createDistanceFilters(){
         distanceFilters.clear();
         int count = distances.length;
 
@@ -263,27 +281,41 @@ public class PointsManager {
 
         }
 
-        setFilters.add(new SetFilter("Etc", rest));
+        setFilters.add(new SetFilter("...", rest));
     }
 
-
-    private void removeUnusedCategories(Set<String> names){
-        Set<String> remain = new HashSet<String>();
-        Set<String> needed = new HashSet<String>();
-        //TODO: get needed categories from some source
-        // for(..)needed.add(..)
-        //needed.add("Hotels");
-        for(String str : names){
-           // log.trace("Cheking category {}", str);
-            if(needed.contains(str))
-                remain.add(str);
+    public void createSetsFilters(){
+        Set <String>oldDisabledFilters = new HashSet<String>();
+        for(Filter flt : setFilters){
+            if(!flt.isActive()){
+                oldDisabledFilters.add(flt.getName());
+            }
         }
-        log.error("Remaining categories: **********\n");
-        names.clear();
-        for(String str : remain){
-            log.error(str);
-            names.add(str);
+        setFilters.clear();
+        Set<Filter> groupedFilters = new HashSet<Filter>();
+        Set<Filter> rest = new HashSet<Filter>();
+        for(Filter flt : filters)
+            rest.add(flt);
+        for(int i =0; i < disabs.size() - 1; i++){
+            groupedFilters.clear();
+            if(disabs.get(i).length < 2)
+                continue;
+            for(int j = 1; j < disabs.get(i).length; j++){
+                for(Filter flt : filters){
+                    if(((CategoryFilter)flt).getId().equalsIgnoreCase(disabs.get(i)[j])) {
+                        groupedFilters.add(flt);
+                        rest.remove(flt);
+                        continue;
+                    }
+                }
+            }
+            setFilters.add(new SetFilter(disabs.get(i)[0],groupedFilters));
         }
+        for(Filter flt : setFilters){
+            if(oldDisabledFilters.contains(flt.getName()))
+                flt.setActive(false);
+        }
+        setFilters.add(new SetFilter("...", rest));
     }
 
 
@@ -327,6 +359,10 @@ public class PointsManager {
 
     public List<Filter> getDistanceFilters() {
         return Collections.unmodifiableList(distanceFilters);
+    }
+
+    public List<Filter> getCategoryFilters(){
+        return Collections.unmodifiableList(filters);
     }
 
 	public void notifyFiltersUpdated() {
@@ -386,4 +422,41 @@ public class PointsManager {
 	}
 
 	private static volatile PointsManager instance;
+
+    public void loadDisabilities(){
+        DisabilitiesLoader dl = new DisabilitiesLoader();
+    }
+
+    public class disablititiesLoadAsyncTask extends AsyncTask {
+
+        @Override
+        protected Object doInBackground(Object[] objects) {
+            loadDisabilities();
+            disabilitiesLoaded = true;
+            createSetFromDisabilities();
+            createFilters();
+
+
+            return null;
+        }
+    }
+
+    public void createSetFromDisabilities(){
+        disabs.clear();
+        if(DisabilitiesLoader.disabilities == null)
+            return;
+        List<Disability> ds = DisabilitiesLoader.disabilities.getDisabilities();
+        disabs = new ArrayList<String[]>();
+
+        for(Disability d : ds){
+            String [] da = new String[d.getCategories().size() + 1];
+            da[0] = d.getName();
+            int i = 1;
+            for(String cat : d.getCategories()){
+                da[i++] = cat;
+            }
+            disabs.add(da);
+        }
+    }
+
 }

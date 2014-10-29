@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">AudibleAlert</string>
+    <string name="app_name">Audio Assistant</string>
     <string name="action_settings">Settings</string>
     <string name="action_search">Search</string>
     <string name="action_place">Show places</string>
@@ -51,6 +51,9 @@
     <string name="str_cant_delete_active_content">Can\'t delete active content</string>
     <string name="pref_alert_radius">Alert radius</string>
 
+    <string name="gets_pref_category">GeTS preferences</string>
+    <string name="enable_gets_pref">Enable GeTS</string>
+    <string name="gets_server">GeTS Server</string>
     <plurals name="distance_meters">
         <item quantity="one">Distance: %d meter</item>
         <item quantity="other">Distance: %d meters</item>
@@ -74,5 +77,12 @@
 
     <string name="mocking_title">Mock location</string>
     <string name="mocking">Use this to mock location</string>
+
+    <string name="exit_button">Exit</string>
+
+    <string name="crosswalk">Crosswalk</string>
+    <string name="rough_roads">Rough roads</string>
+    <string name="ramp">Ramp</string>
+    <string name="slope">Slope</string>
 
 </resources>

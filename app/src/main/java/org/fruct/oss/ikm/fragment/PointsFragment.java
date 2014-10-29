@@ -28,6 +28,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.fruct.oss.aa.CategoriesManager;
+import org.fruct.oss.aa.DistanceTracker;
 import org.fruct.oss.ikm.DetailsActivity;
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.aa.R;
@@ -40,6 +42,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -121,10 +126,14 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 
 	private PointDesc lastShownPoint;
 
+    private String locale;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+        locale = this.getResources().getConfiguration().locale.getLanguage();
+        log.error("Locale language = " + locale);
 		setHasOptionsMenu(true);
 	}
 
@@ -172,7 +181,25 @@ public class PointsFragment extends ListFragment implements TextWatcher {
                     return true;
             }
         });
-		
+
+        for(PointDesc pd : shownList){
+            pd.setDistance(DistanceTracker.getDistanceTo(pd));
+        }
+
+        Comparator<PointDesc> comp = new Comparator<PointDesc>() {
+            @Override
+            public int compare(PointDesc pointDesc, PointDesc pointDesc2) {
+                return pointDesc.getDistance() - pointDesc2.getDistance();
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                return false;
+            }
+        };
+
+        Collections.sort(shownList, comp);
+
 		PointAdapter adapter = new PointAdapter(
 				getActivity(), 
 				getListItemLayout(),
@@ -260,8 +287,9 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 			Intent intent = getActivity().getIntent();
 			List<PointDesc> poiList = intent.getParcelableArrayListExtra(MapFragment.POINTS);
 
-			if (poiList == null)
-				poiList = PointsManager.getInstance().getAllPoints();
+			if (poiList == null) {
+                poiList = PointsManager.getInstance().getAllPoints();
+            }
 			
 			this.poiList = poiList;
 			updateList();
@@ -311,9 +339,14 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 	private void setupTab(final Filter filter, boolean isSelected) {
 		ActionBarActivity activity = (ActionBarActivity) getActivity();
 		ActionBar actionBar = activity.getSupportActionBar();
-
+        String name;
 		Tab tab = activity.getSupportActionBar().newTab();
-		tab.setText(filter.getString());
+        tab.setText(filter.getString());
+        /*if(locale.equals("ru")){
+            name = CategoriesManager.getName(filter.getString());
+            tab.setText(name);
+        } */
+
 		
 		tab.setTabListener(new ActionBar.TabListener() {
 			@Override
@@ -338,7 +371,7 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 	
 	private void setupFilterBar(int selectedBar) {
 		ActionBar actionBar = getActionBar();
-		List<Filter> filters = PointsManager.getInstance().getDistanceFilters();
+		List<Filter> filters = PointsManager.getInstance().getCategoryFilters();
 		
 		setupTab(new AllFilter(), false);
 		int c = 1;

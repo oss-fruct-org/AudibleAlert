@@ -9,6 +9,7 @@ import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
+import android.preference.PreferenceScreen;
 import android.widget.Toast;
 
 import org.fruct.oss.ikm.utils.Utils;
@@ -42,14 +43,9 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String AUTOREGION = "autoregion";
 	public static final String MAPMATCHING = "mapmatching";
 
-	//public static final String
-
 	public static final String GETS_ENABLE = "gets_enable";
 	public static final String GETS_SERVER = "gets_server";
 	public static final String GETS_RADIUS = "gets_radius";
-
-    public static final String ALERT_RADIUS = "Alert radius";
-
 
 	public static final String STORAGE_PATH = "storage_path";
 
@@ -84,15 +80,23 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		super.onCreate(savedInstanceState);
 		addPreferencesFromResource(R.xml.preferences);
         //addPreferencesFromResource(R.xml.category_prefs);
-		
+        PreferenceScreen screen = getPreferenceScreen();
+
 		storeLocationsPref = (CheckBoxPreference) findPreference(STORE_LOCATION);
+        CheckBoxPreference storeLocPref = (CheckBoxPreference) findPreference(STORE_LOCATION);
+        CheckBoxPreference wakeMode = (CheckBoxPreference) findPreference(PREF_WAKE);
+        CheckBoxPreference regionPref = (CheckBoxPreference) findPreference(AUTOREGION);
 		nearestPointsPref = (ListPreference) findPreference(NEAREST_POINTS);
 		//vehiclePref = (ListPreference) findPreference(VEHICLE);
+        screen.removePreference(nearestPointsPref);
+        screen.removePreference(storeLocPref);
+        screen.removePreference(wakeMode);
+        screen.removePreference(regionPref);
 
 		storagePathPref = (ListPreference) findPreference(STORAGE_PATH);
 		getsRadius = (ListPreference) findPreference(GETS_RADIUS);
 
-		//getsServerPref = (EditTextPreference) findPreference(GETS_SERVER);
+		getsServerPref = (EditTextPreference) findPreference(GETS_SERVER);
 	}
 
 	@Override

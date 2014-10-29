@@ -236,10 +236,8 @@ public class DetailsFragment extends Fragment {
 
 		descView.setAutoLinkMask(Linkify.WEB_URLS);
 
-		if (desc.getDescription().isEmpty())
-			descView.setVisibility(View.GONE);
-		else
-			descView.setText(desc.getDescription());
+        // TODO: Rating as string in res
+		descView.setText(desc.getDescription() + "\n Rating: " + desc.getRating());
 
 	}
 

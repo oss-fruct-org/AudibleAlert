@@ -4,7 +4,10 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Patterns;
 
+import org.fruct.oss.aa.CategoriesManager;
 import org.fruct.oss.ikm.service.Direction.RelativeDirection;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.osmdroid.util.GeoPoint;
 
 import java.io.Serializable;
@@ -20,6 +23,12 @@ public class PointDesc implements Serializable, Parcelable {
 	
 	private String category;
 	private String desc;
+
+    private String cat_id;
+
+    private int rating = 1; // default value
+
+    private String image;
 	
 	private static int nextId = 0;
 	private int internalId;
@@ -38,7 +47,7 @@ public class PointDesc implements Serializable, Parcelable {
 	}
 	
 	public PointDesc setCategory(String cat) {
-		this.category = cat;
+		this.category = CategoriesManager.getName(cat);
 		return this;
 	}
 
@@ -48,19 +57,34 @@ public class PointDesc implements Serializable, Parcelable {
 
 	public PointDesc setDescription(String d) {
 		if (d == null)
-			d = "";
-
-		this.desc = d;
-
-		Matcher match = Patterns.WEB_URL.matcher(desc);
-
-		if (match.find()) {
-			desc = match.group(0);
-			isDescriptionUrl = true;
-		}
+            d = "";
+        this.desc = "";
+        parseDescription(d);
 
 		return this;
 	}
+
+    /**
+     * @param desc
+     *
+     * Excepcting this/same JSON:
+     * {"rating" : "10"; "description": "the best point ever"}
+     */
+    private void parseDescription(String desc){
+        String d, r;
+        try {
+            JSONObject root = new JSONObject(desc);
+            r = root.getString("rating");
+            this.rating = Integer.parseInt(r);
+            d = root.getString("description");
+            this.desc = d;
+        }catch (JSONException e) {
+           // e.printStackTrace();
+        }catch(Exception e){
+           // e.printStackTrace();
+        }
+
+    }
 	
 	public String getName() {
 		return name;
@@ -79,8 +103,7 @@ public class PointDesc implements Serializable, Parcelable {
 								: geoPoint;
 	}
 	
-	
-	
+
 	public RelativeDirection getRelativeDirection() {
 		return dir;
 	}
@@ -97,6 +120,10 @@ public class PointDesc implements Serializable, Parcelable {
 	public void setDistance(int distance) {
 		this.distance = distance;
 	}
+
+    public PointDesc setCat_id(String cat_id) {this.cat_id = cat_id; return this;}
+
+    public String getCat_id(){return this.cat_id;}
 	
 	@Override
 	public int hashCode() {
@@ -117,6 +144,10 @@ public class PointDesc implements Serializable, Parcelable {
 		PointDesc other = (PointDesc) obj;
 		return internalId == other.internalId;
 	}
+
+    public int getRating(){
+        return rating;
+    }
 
 	@Override
 	public String toString() {

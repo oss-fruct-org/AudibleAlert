@@ -9,7 +9,7 @@ import java.util.List;
 @Root(name = "content", strict = false)
 public class CategoriesList implements IContent{
 	@ElementList(name = "categories", inline = true, entry = "category")
-	private List<Category> categories;
+	private  List<Category> categories;
 
 	public List<Category> getCategories() {
 		return categories;

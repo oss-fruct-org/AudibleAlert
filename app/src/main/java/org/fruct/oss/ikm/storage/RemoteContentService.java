@@ -154,7 +154,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 
 					NotificationCompat.Builder builder = new NotificationCompat.Builder(RemoteContentService.this);
 					builder.setSmallIcon(R.drawable.ic_launcher)
-							.setContentTitle("Road Signs")
+							.setContentTitle("AudibleAlert")
 							.setContentText("Downloading " + remoteItem.getName())
 							.setContentIntent(contentIntent);
 

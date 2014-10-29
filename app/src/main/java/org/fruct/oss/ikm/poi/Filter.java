@@ -17,6 +17,8 @@ public interface Filter {
 	 * @return string
 	 */
 	String getString();
+
+    String getName();
 	
 	boolean isActive();
 	void setActive(boolean active);

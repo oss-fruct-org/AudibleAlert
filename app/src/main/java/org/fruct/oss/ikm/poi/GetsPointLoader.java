@@ -3,6 +3,7 @@ package org.fruct.oss.ikm.poi;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import org.fruct.oss.aa.CategoriesManager;
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.poi.gets.CategoriesList;
 import org.fruct.oss.ikm.poi.gets.Gets;
@@ -38,9 +39,9 @@ public class GetsPointLoader extends PointLoader {
 
 	private int radius = 5000;
 
-	private boolean needUpdate = false;
+    private boolean needUpdate = false;
 
-    Set<String> needed = new HashSet<String>();
+
 
 	public GetsPointLoader(String url) {
 		gets = new Gets(url);
@@ -60,17 +61,11 @@ public class GetsPointLoader extends PointLoader {
 		log.trace("GetsPointLoader.loadPoints");
 
 		if (currentPosition != null) {
-			List<PointDesc> points = new ArrayList<PointDesc>();
-			List<CategoriesList.Category> categories = gets.getCategories();
+            List<PointDesc> points = new ArrayList<PointDesc>();
+            List<CategoriesList.Category> categories = gets.getCategories();
 
-            /*
-            initializeNeedeCategories();
+            CategoriesManager.loadCategories(categories);
 
-            for (CategoriesList.Category cat : categories)
-                if(!checkCategory(cat.getName()))
-                    categories.remove(cat);
-
-            */
 			for (CategoriesList.Category cat : categories) {
 				try {
 					points.addAll(gets.getPoints(cat, currentPosition, radius));
@@ -89,6 +84,7 @@ public class GetsPointLoader extends PointLoader {
 			pref.edit().putInt(PREF_LAST_LAT, lastPosition.getLatitudeE6())
 					.putInt(PREF_LAST_LON, lastPosition.getLongitudeE6())
 					.putLong(PREF_LAST_TIME, lastTime).apply();
+
 		}
 	}
 
@@ -125,16 +121,6 @@ public class GetsPointLoader extends PointLoader {
 		needUpdate = true;
 	}
 
-    private void initializeNeedeCategories(){
-        //TODO: get needed categories from some source
-        // for(..)needed.add(..)
-        //needed.add("Hotels");
-    }
-    private boolean checkCategory(String categoryName) {
-        log.debug("NeededCategories size = " + needed.size());
-        if (needed.contains(categoryName))
-            return true;
-        else
-            return false;
-    }
+
+
 }
